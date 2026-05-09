@@ -1129,19 +1129,28 @@
     box-shadow: 0 1px 2px rgba(28, 53, 32, 0.04);
   }
 
+  /* Stats KPI row — sits below hero text, always horizontal */
+  .hero-stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
   .hero-stat {
+    flex: 1;
+    min-width: 100px;
     display: flex; flex-direction: row; align-items: center; gap: 10px;
-    padding: 11px 16px;
-    background: rgba(255, 255, 255, 0.70);
+    padding: 11px 18px;
+    background: rgba(255, 255, 255, 0.72);
     border: 1px solid rgba(28, 53, 32, 0.09);
     border-radius: 14px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    min-width: 130px;
     box-shadow: 0 1px 2px rgba(28, 53, 32, 0.04);
   }
-  @media (max-width: 767px) {
-    .hero-stat { min-width: 80px; flex-direction: column; align-items: center; gap: 2px; padding: 10px 14px; }
+  @media (max-width: 480px) {
+    .hero-stat { flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 14px; }
   }
   .hero-stat-value {
     font-family: 'Fraunces', serif;

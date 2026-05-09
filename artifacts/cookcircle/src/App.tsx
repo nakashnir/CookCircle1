@@ -1190,19 +1190,18 @@ function DonationFeed({
         <div className="hero-panel-bg-blob" style={{ width: 280, height: 280, background: 'radial-gradient(circle, rgba(238,156,90,0.18) 0%, transparent 70%)', top: '-60px', right: '5%' }} />
         <div className="hero-panel-bg-blob" style={{ width: 200, height: 200, background: 'radial-gradient(circle, rgba(143,176,145,0.20) 0%, transparent 70%)', bottom: '-40px', left: '3%' }} />
 
-        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          {/* Text side */}
+        <div className="relative">
+          {/* Text block */}
           <motion.div
-            className="flex-1 min-w-0"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           >
             <span className="hero-pill">🌿 Community food sharing</span>
-            <h1 className="page-title mb-3" style={{ fontSize: 'clamp(26px, 3.5vw, 42px)' }}>
+            <h1 className="page-title mb-3" style={{ fontSize: 'clamp(26px, 3.5vw, 40px)' }}>
               Fresh food,<br className="hidden sm:block" /> shared nearby.
             </h1>
-            <p className="page-subtitle mb-5" style={{ maxWidth: 420 }}>
+            <p className="page-subtitle mb-5" style={{ maxWidth: 480 }}>
               Surplus meals and ingredients from neighbors — free, local, and community-powered.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -1212,18 +1211,18 @@ function DonationFeed({
             </div>
           </motion.div>
 
-          {/* Stats side — staggered entrance */}
+          {/* Stats row — horizontal KPI strip */}
           <motion.div
-            className="flex gap-3 flex-shrink-0 flex-wrap md:flex-col md:gap-2"
+            className="hero-stats-row"
             initial="hidden"
             animate="visible"
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.09, delayChildren: 0.28 } } }}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08, delayChildren: 0.3 } } }}
           >
             {statItems.map(({ value, label }) => (
               <motion.div
                 key={label}
                 className="hero-stat"
-                variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }}
+                variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } } }}
               >
                 <span className="hero-stat-value">{value}</span>
                 <span className="hero-stat-label">{label}</span>
