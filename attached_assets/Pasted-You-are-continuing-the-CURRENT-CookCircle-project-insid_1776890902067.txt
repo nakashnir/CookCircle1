@@ -1,0 +1,155 @@
+You are continuing the CURRENT CookCircle project inside this Replit workspace.
+
+Do not redesign from scratch.
+Do not change the approved product scope.
+Do not add features outside the approved MVP.
+
+Approved MVP scope only:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media/location placeholders
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+Current status:
+- the frontend app already runs in Replit
+- keep the CURRENT running project as source of truth
+- preserve the current screens and flow
+- do not replace the app with a new template
+
+Current screens to preserve:
+- Donation Feed
+- Donation Details
+- Create Donation
+- My Donations
+- My Requests
+- Review / Rating
+- Profile
+
+Current target flow to preserve:
+Feed -> Donation Details -> Send Pickup Request -> My Requests -> Complete Pickup -> Leave Review
+
+Now execute the next sprint:
+
+PHASE 1 — INSPECT CURRENT PROJECT
+1. inspect the current running project structure
+2. confirm which frontend files are currently active
+3. do not rewrite the project structure unless necessary
+
+PHASE 2 — ADD A MINIMAL BACKEND
+Create the smallest reliable backend for this MVP using Node + Express.
+
+Add these minimal endpoints:
+- GET /api/health
+- GET /api/donations
+- GET /api/donations/:id
+- POST /api/donations
+- PATCH /api/donations/:id
+- DELETE /api/donations/:id
+
+- GET /api/requests
+- POST /api/donations/:id/requests
+- PATCH /api/requests/:id
+- POST /api/requests/:id/cancel
+- POST /api/requests/:id/complete
+
+- GET /api/reviews
+- POST /api/requests/:id/reviews
+
+PHASE 3 — ADD BASIC PERSISTENCE
+Use the smallest reliable persistence available inside this Replit workspace.
+
+Preferred:
+- if Replit Postgres is already available and easy to wire, use it
+- otherwise use simple JSON/file persistence
+- do not get blocked on infrastructure
+- priority is a working MVP demo, not perfect architecture
+
+Whichever persistence you choose:
+- keep the schema aligned to:
+  users
+  donations
+  pickup_requests
+  reviews
+- keep the implementation simple and local to this project
+
+PHASE 4 — CONNECT FRONTEND TO API
+Replace the current purely in-memory frontend flow with API-backed state.
+
+Requirements:
+- frontend loads donations from API
+- frontend loads requests from API
+- frontend loads reviews from API
+- create donation persists
+- create pickup request persists
+- request status changes persist
+- review submission persists
+- refreshing the page should not lose all data
+
+PHASE 5 — KEEP MVP RULES INTACT
+Statuses must remain exactly:
+
+Donation:
+- available
+- reserved
+- picked_up
+- cancelled
+- expired
+
+PickupRequest:
+- pending
+- approved
+- cancelled
+- completed
+
+Dietary tags must remain exactly:
+- kosher
+- gluten_free
+- vegan
+- vegetarian
+
+Privacy rule:
+- do not show full address before approval
+- before approval show city / general area only
+- after approval or completion full pickup details may be shown
+
+Validation rules:
+- cannot request a donation unless it is available
+- completing a request must update donation to picked_up
+- review allowed only after completed request
+- preserve discreet/privacy behavior in the current UI
+
+PHASE 6 — KEEP CHANGES SMALL AND SAFE
+- do not add auth yet unless absolutely necessary
+- do not introduce unnecessary libraries
+- do not break the current working UI
+- do not do a broad visual redesign in this step
+- only small UI changes if needed for integration/correctness
+
+OUTPUT FORMAT
+When done, return exactly:
+1. backend/persistence approach used
+2. files created or changed
+3. commands used to run everything
+4. preview/webview path or URL
+5. any real remaining issues
+
+Rules:
+- no audit
+- no long essay
+- no product brainstorm
+- no scope creep
+- execution only
+- make the smallest set of changes needed to get a real working MVP

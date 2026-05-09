@@ -1,0 +1,247 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Sprint 1 is considered complete and verified:
+- schema foundation exists
+- exact + area location model exists
+- location_confirmed exists
+- backend privacy shaping exists
+- area derivation exists
+- hide_address is removed from the privacy model
+- legacy compatibility aliases currently exist temporarily
+
+Do NOT redo Sprint 1.
+Do NOT reopen architecture.
+Do NOT redesign the product.
+Do NOT change the approved product scope.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+This is SPRINT 2 — ADDRESS INPUT UI + LOCATION CONFIRMATION FLOW.
+
+APPROVED SCOPE ONLY
+Keep everything strictly within:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+SPRINT 2 GOAL
+Implement the new structured address entry UX and the mandatory location confirmation flow on top of the Sprint 1 backend foundation.
+
+This sprint IS frontend-heavy, but must stay aligned with Sprint 1 backend rules.
+
+FIXED CONSTRAINTS FROM SPRINT 0 / 0.1 / 1
+1. Provider direction remains Google-first
+2. Address entry must NOT remain free-text-only
+3. Use structured fields:
+   - city
+   - street
+   - house number
+   - private pickup notes
+4. location_confirmed is required before a donation can become available
+5. Backend remains source of truth
+6. Before approval = general area only
+7. After approval = exact location only for donor + approved/completed requester
+8. Fallback mode must never pretend to be precise
+9. Sprint 1 compatibility aliases may remain temporarily during transition
+10. Address edit after approval is NOT solved here; keep it noted for Sprint 5 QA
+
+EXECUTE IN THESE PHASES
+
+PHASE 1 — STRUCTURED ADDRESS INPUT UI
+Replace the current address entry UX in Create Donation and Edit Donation with a proper structured form.
+
+Implement:
+- Country: read-only, fixed to Israel
+- City: validated text input / combobox with suggestions from the canonical Israel city list
+- Street: text input with Google Places Autocomplete integration if the public key is available
+- House Number: short text input
+- Pickup Notes: optional private textarea
+
+Requirements:
+1. Create Donation must use the new structured location form
+2. Edit Donation must use the same structured approach
+3. keep the rest of the form stable
+4. no broad redesign beyond what this sprint needs
+5. field labels, help text, and section hierarchy must be clear
+
+PHASE 2 — CITY INPUT BEHAVIOR
+Implement the locked city input contract.
+
+Requirements:
+1. city is not a seed-only dropdown
+2. city uses a validated text input / combobox with suggestions from the canonical Israeli city list
+3. donor may type a city without selecting a suggestion
+4. UI should guide toward canonical city values
+5. keep the data flow compatible with backend normalization
+
+PHASE 3 — GOOGLE PLACES AUTOCOMPLETE ON STREET
+Implement Google Places Autocomplete on the Street field when the frontend public key is available.
+
+Requirements:
+1. use a public-safe browser key (for example VITE_GOOGLE_MAPS_PUBLIC_KEY or equivalent)
+2. scope autocomplete to Israel
+3. when a suggestion is selected:
+   - prefill street
+   - prefill city when possible
+   - prefill house number when possible
+4. if no public key is available:
+   - do not break the form
+   - degrade gracefully
+   - show a clear, honest fallback UX
+5. never expose server-only secrets in the frontend
+
+PHASE 4 — LOCATION PREVIEW / CONFIRMATION STEP
+Implement the mandatory location confirmation flow before publish.
+
+Requirements:
+1. after the donor fills the address section, the donor must go through a location confirmation step
+2. this step must be explicit and impossible to bypass before publish
+3. show:
+   - normalized / formatted address
+   - exact map preview for donor review
+   - area preview showing what requesters/public viewers will see
+   - confidence state / verification status
+4. confirmation states must follow the locked policy:
+   - verified → normal confirm
+   - approximate → confirm anyway
+   - zero results → cannot publish
+   - fallback/local mode → area-only / not verified behavior
+5. donation cannot become available until confirmation is completed
+
+PHASE 5 — FALLBACK UX / TRUST-PRESERVING LANGUAGE
+This is important.
+
+Requirements:
+1. if geocoding/provider is in fallback/local mode, the UI must be honest
+2. use trust-preserving wording such as:
+   - Location not verified
+   - Only general area will be shown
+   - Exact pickup location will be confirmed after approval / with verified provider
+3. do not imply exact precision in fallback mode
+4. do not show exact-map language when exact coordinates are not verified
+5. keep the user experience clear and product-like
+
+PHASE 6 — CREATE / EDIT FLOW INTEGRATION
+Wire the new address flow into Create Donation and Edit Donation fully.
+
+Requirements:
+1. Create Donation should submit the structured address fields correctly
+2. Edit Donation should re-run the confirmation step only when address fields changed
+3. non-address edits should not force location confirmation again
+4. preserve the rest of the donation logic
+
+PHASE 7 — DONATION DETAILS / MY REQUESTS COMPATIBILITY
+Keep the existing views stable while Sprint 2 lands.
+
+Requirements:
+1. Donation Details must continue to render correctly using the backend location visibility rules
+2. My Requests must continue to show the correct address level for each user context
+3. no privacy regression
+4. no location leakage
+
+PHASE 8 — LEGACY COMPATIBILITY TRANSITION
+Because Sprint 1 kept temporary API aliases for compatibility, Sprint 2 should reduce ambiguity but not break the running app.
+
+Requirements:
+1. use the new structured location fields in the frontend where possible
+2. if temporary aliases are still needed this sprint, keep them only where necessary
+3. clearly note what can be removed in Sprint 3 or later
+4. do not do a risky cleanup that breaks the current app
+
+PHASE 9 — ACCESSIBILITY / RESPONSIVE FOR THE NEW FLOW
+Because this sprint introduces a new form flow, keep it usable.
+
+Requirements:
+1. labels and inputs must be correctly associated
+2. confirmation step must be keyboard-usable
+3. mobile layout for the new address/confirmation flow must remain clear
+4. no broken small-screen form states
+
+PHASE 10 — NO REGRESSION QA
+Verify all current flows still work:
+- create donation
+- edit donation
+- delete donation where valid
+- donor lifecycle actions
+- request pickup
+- donor approve / decline
+- recipient complete pickup
+- review after completed request
+- session user switching
+- privacy gating
+- image handling
+- location preview
+- general-area map before approval
+- exact map after approval
+- filters / sorting / discovery
+
+Also verify the new Sprint 2-specific flows:
+- structured address entry on create
+- structured address entry on edit
+- autocomplete path when public key exists
+- graceful fallback path when public key does not exist
+- mandatory location confirmation before publish
+- zero-results cannot publish
+- fallback mode stays honest
+
+MANDATORY NOTES TO HONOR
+1. Do NOT weaken the backend rule that location_confirmed is required.
+2. Do NOT reintroduce hide_address behavior.
+3. Do NOT solve address-edit-after-approval here beyond preserving behavior; keep it as a Sprint 5 QA edge case.
+4. Do NOT fake Google integration if the public key is missing.
+
+SPRINT 2 ACCEPTANCE CRITERIA
+This sprint is complete only if ALL are true:
+1. Create Donation uses structured address fields
+2. Edit Donation uses structured address fields
+3. city input uses suggestions / validation behavior aligned to the canonical city list
+4. Street field supports Google Places Autocomplete when public key exists
+5. the form degrades gracefully when no public key exists
+6. a mandatory location confirmation step exists before publish
+7. zero-results cannot publish
+8. fallback mode uses honest, trust-preserving wording
+9. current privacy/location rules are preserved
+10. current product flows still work without major regression
+11. Sprint 3 can begin without UI ambiguity
+
+RULES
+- no broad redesign
+- no schema redesign
+- no reopening Sprint 1
+- no discovery mode
+- no vague theory
+- no long essay
+- execution only
+- make the biggest practical progress possible in one sprint
+
+OUTPUT FORMAT
+When done, return exactly:
+1. files created or changed
+2. structured address UI changes made
+3. autocomplete / city input behavior implemented
+4. location confirmation flow implemented
+5. fallback UX behavior implemented
+6. compatibility handling kept or reduced
+7. accessibility / responsive changes made
+8. whether the app is still running
+9. any regressions or blockers
+10. what remains for Sprint 3

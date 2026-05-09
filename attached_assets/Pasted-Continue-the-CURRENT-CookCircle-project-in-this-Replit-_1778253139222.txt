@@ -1,0 +1,253 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Sprint 1 is complete:
+- schema foundation exists
+- exact + area location model exists
+- location_confirmed exists
+- backend privacy shaping exists
+- area derivation exists
+- hide_address is removed from the privacy model
+- compatibility aliases currently exist
+
+Sprint 2 is complete:
+- Create Donation uses structured address fields
+- Edit Donation uses structured address fields
+- city input has suggestions / validation behavior
+- Street field has Google Places path when public key exists
+- fallback path works when public key does not exist
+- mandatory location confirmation UI exists before publish
+
+Do NOT redo Sprint 1.
+Do NOT redo Sprint 2.
+Do NOT redesign the product.
+Do NOT change the approved product scope.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+This is SPRINT 3 — REAL GEOCODING + VALIDATION + CONFIRMATION HARDENING.
+
+APPROVED SCOPE ONLY
+Keep everything strictly within:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+SPRINT 3 GOAL
+Activate and harden the REAL backend geocoding pipeline using Google server-side geocoding / validation, so the existing Sprint 2 UI flows are backed by real normalized address results, real precision/status signals, and trustworthy publish rules.
+
+IMPORTANT
+This sprint is mainly backend + integration hardening.
+Do NOT do a broad UI redesign.
+Do NOT expand the form unnecessarily.
+Only make small UI changes when needed to support real geocoding states correctly.
+
+FIXED CONSTRAINTS
+1. Google-first remains the provider direction
+2. Browser-side autocomplete and server-side geocoding are separate concerns
+3. Backend is source of truth for:
+   - location visibility
+   - geocode status
+   - geocode precision
+   - location_confirmed enforcement
+4. Before approval = area only
+5. After approval/completion = exact only for donor + approved/completed requester
+6. Fallback mode must never pretend to be exact
+7. Zero-results cannot publish
+8. Address edit after approval remains a Sprint 5 QA edge case, not solved here
+
+EXECUTE IN THESE PHASES
+
+PHASE 1 — REAL SERVER-SIDE GOOGLE GEOCODING
+Implement and verify the real backend geocoding path.
+
+Requirements:
+1. use GOOGLE_MAPS_API_KEY server-side only
+2. geocoding must happen from the backend, never from the frontend
+3. geocode query must be assembled from structured fields:
+   - street
+   - house_number
+   - city
+   - Israel
+4. parse and persist:
+   - formatted_address
+   - place_id
+   - exact_lat
+   - exact_lng
+   - geocode_provider
+   - geocode_status
+   - geocode_precision
+5. keep fallback behavior only when real geocoding is unavailable or fails
+6. never expose server secret values to the frontend
+
+PHASE 2 — REAL GEOCODE STATUS + PRECISION HANDLING
+Implement trustworthy geocode result classification.
+
+Requirements:
+1. map Google result quality into the locked status/precision model
+2. support at least these outcomes:
+   - ok + high confidence
+   - ok + approximate/low confidence
+   - zero_results
+   - provider_error
+   - fallback
+3. ensure the backend stores these states cleanly
+4. ensure donor-facing UI reads these backend signals correctly
+5. do not let the frontend invent its own interpretation
+
+PHASE 3 — CONFIRMATION FLOW HARDENING
+The confirmation UI already exists. Now it must be backed by real geocoding behavior.
+
+Requirements:
+1. Create Donation confirmation step must use real backend preview results
+2. Edit Donation confirmation step must use real backend preview results when address changed
+3. verified result:
+   - normal confirm path
+4. approximate result:
+   - confirm anyway path with stronger advisory
+5. zero_results:
+   - cannot publish
+   - must fix address
+6. provider_error / fallback:
+   - honest degraded behavior
+   - no fake exact precision
+7. backend must remain the final gate for availability/publish
+
+PHASE 4 — HEBREW / ENGLISH ISRAELI ADDRESS SUPPORT
+This is important for the real product.
+
+Requirements:
+1. verify geocoding works for Israeli addresses in English
+2. verify geocoding works for Israeli addresses in Hebrew
+3. test realistic examples such as:
+   - Rothschild Blvd 88, Tel Aviv
+   - רוטשילד 88, תל אביב
+   - Herzl 12, Haifa
+   - הרצל 12, חיפה
+4. verify normalization and formatted_address behavior
+5. ensure the system does not break on mixed-language inputs
+
+PHASE 5 — ZERO-RESULTS / FALLBACK ENFORCEMENT
+Implement the locked publish policy correctly.
+
+Requirements:
+1. zero_results cannot publish
+2. fallback mode cannot pretend to be exact
+3. in fallback mode, exact_lat / exact_lng must remain null
+4. area-only behavior must remain honest
+5. if provider fails temporarily, handle it according to the locked fallback policy
+6. make sure the user messaging matches the real backend state
+
+PHASE 6 — DONOR-FACING LOCATION QUALITY SIGNALS
+Improve only the minimal UI necessary to reflect the real backend state well.
+
+Requirements:
+1. donor must see trustworthy status messaging after geocode preview:
+   - verified
+   - approximate
+   - not found
+   - fallback / not verified
+2. wording must preserve trust
+3. no false precision
+4. do not do a broad visual redesign
+
+PHASE 7 — TECHNICAL DOCS / OPENAPI UPDATE
+Update the technical contract to match the real integrated behavior.
+
+Requirements:
+1. update OpenAPI if the preview/geocoding flow is now materially richer
+2. update docs for:
+   - required env vars
+   - real Google geocoding path
+   - fallback behavior
+   - status / precision meanings
+3. clearly document what is real vs fallback
+4. keep docs accurate and honest
+
+PHASE 8 — NO REGRESSION QA
+Verify all existing flows still work:
+- create donation
+- edit donation
+- delete donation where valid
+- donor lifecycle actions
+- request pickup
+- donor approve / decline
+- recipient complete pickup
+- review after completed request
+- session user switching
+- privacy gating
+- image handling
+- location preview
+- general-area map before approval
+- exact map after approval
+- filters / sorting / discovery
+
+Also verify Sprint 3-specific behavior:
+- real geocode preview path works when Google server key exists
+- fallback path works when key is absent
+- Hebrew address geocoding works
+- English address geocoding works
+- zero_results cannot publish
+- approximate results require explicit confirmation
+- exact verified results allow normal confirmation
+
+MANDATORY NOTES TO HONOR
+1. Do NOT weaken location_confirmed enforcement.
+2. Do NOT reintroduce hide_address behavior.
+3. Do NOT solve address-edit-after-approval here beyond preserving behavior.
+4. Do NOT fake successful Google geocoding if the server key is missing.
+5. If GOOGLE_MAPS_API_KEY is not configured in this environment, implement and verify the real code path as far as possible, but be honest that runtime is still fallback-only until the key exists.
+
+SPRINT 3 ACCEPTANCE CRITERIA
+This sprint is complete only if ALL are true:
+1. backend real geocoding path exists and is correctly wired
+2. formatted_address / place_id / exact coords / status / precision are populated correctly on real geocode
+3. zero_results cannot publish
+4. fallback mode never creates fake exact precision
+5. donor confirmation flow reflects real backend geocode states
+6. Hebrew and English Israeli addresses are handled correctly
+7. current privacy/location rules are preserved
+8. current product flows still work without major regression
+9. docs reflect real integrated behavior accurately
+10. Sprint 4 can begin without geocoding ambiguity
+
+RULES
+- no broad redesign
+- no schema redesign unless absolutely necessary for correctness
+- no reopening Sprint 1 or 2
+- no discovery mode
+- no vague theory
+- no long essay
+- execution only
+- make the biggest practical progress possible in one sprint
+
+OUTPUT FORMAT
+When done, return exactly:
+1. files created or changed
+2. real geocoding/backend integration changes made
+3. geocode status/precision handling implemented
+4. confirmation hardening changes made
+5. Hebrew/English address support verified
+6. fallback/zero-results enforcement implemented
+7. docs/OpenAPI updates made
+8. whether the app is still running
+9. any regressions or blockers
+10. what remains for Sprint 4

@@ -1,0 +1,146 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+Do NOT redesign the product.
+Do NOT change scope.
+Do NOT do broad polish.
+This is a focused bug-fix task only.
+
+## Actual problem
+The problem is NOT image selection.
+The user CAN:
+- choose an image
+- see the image preview in the form
+
+But after clicking Save / Publish and returning to the Home page, the uploaded image does NOT appear on the saved donation card.
+
+So the bug is specifically in the persistence / post-save / render flow.
+
+## Goal
+Fix the donation image flow so that:
+1. selecting an image works
+2. preview works
+3. saving/publishing persists the image correctly
+4. after save, the donation shows the uploaded image on Home / Feed
+5. the saved donation also shows the uploaded image in Donation Details and My Donations where applicable
+
+## Scope
+Only investigate and fix the donation image persistence/rendering flow.
+Do NOT touch unrelated business logic unless absolutely necessary.
+Do NOT change location logic, privacy logic, donation lifecycle, or map behavior unless directly required for this bug.
+
+## What must be checked
+
+### Phase 1 — frontend form state
+Inspect:
+- Create Donation image picker
+- Edit Donation image picker if relevant
+- preview state
+- image state variable
+- submit payload construction
+
+You must verify:
+1. the selected image is actually included in the final POST / PATCH request
+2. the request payload still contains the image after Save / Publish
+3. the image is not only stored in local preview state and then discarded
+
+### Phase 2 — network/API verification
+Inspect the actual request/response flow:
+- POST /donations
+- PATCH /donations/:id if image replacement is supported
+- response payload after save
+- refreshAll() / refetch logic after save
+- data used by Home / Feed
+
+You must determine exactly:
+1. does the request contain image data?
+2. does the backend receive it?
+3. does the backend save it?
+4. does the backend return imageUrl (or equivalent) in the saved donation?
+5. after redirect/navigation, does the frontend load that returned field correctly?
+
+### Phase 3 — backend/media persistence
+Inspect:
+- POST /donations
+- PATCH /donations/:id
+- media adapter / upload service
+- Cloudinary integration path
+- local fallback media path
+- DB persistence layer
+- seed/fallback override logic
+
+You must determine whether the failure is:
+- image not uploaded
+- image uploaded but not saved
+- image saved but not returned
+- image returned but ignored by frontend
+- imageUrl overwritten by placeholder/default image logic
+- list/feed card still rendering static emoji/placeholder instead of real image
+
+### Phase 4 — Home / Feed / Card rendering
+Inspect:
+- DonationCard
+- Feed/Home rendering
+- My Donations rendering
+- Donation Details rendering if relevant
+
+You must verify:
+1. if imageUrl exists, the UI actually renders it
+2. placeholder/emoji is only used when no real image exists
+3. the Home page is not ignoring the persisted image field
+4. the post-save navigation is not showing stale cached state
+
+### Phase 5 — identify exact failure point
+You must identify the precise root cause.
+Do NOT guess.
+
+Examples of possible root causes:
+- request payload missing image
+- API strips image before save
+- Cloudinary/local media returns value but DB not updated
+- imageUrl saved but refreshAll loads old shape
+- DonationCard ignores imageUrl and always shows placeholder
+- newly created donation uses stale frontend object instead of fetched persisted object
+
+### Phase 6 — fix
+Apply the minimum safe code changes needed so that:
+1. uploaded image persists after Save / Publish
+2. Home / Feed shows the uploaded image immediately after save/refetch
+3. Donation Details and My Donations also show the uploaded image correctly where applicable
+4. Edit Donation image replacement also works if supported
+5. no unrelated regressions are introduced
+
+## Important
+Do NOT fake success.
+Do NOT just keep the preview working.
+The saved persisted donation must actually show the uploaded image after navigation/refetch.
+
+If Cloudinary is not configured, determine the real intended behavior:
+- either local fallback persistence should still preserve the selected image
+- or the exact env blocker must be proven clearly
+
+## Acceptance criteria
+This task is complete only if all are true:
+
+1. Root cause is identified precisely.
+2. Create Donation image persists after Save / Publish.
+3. Home / Feed shows the uploaded image after save.
+4. Donation Details shows the uploaded image when available.
+5. My Donations shows the uploaded image when available.
+6. Placeholder is only used when no real image exists.
+7. No unrelated flows are broken.
+8. App still runs cleanly.
+
+## Output format
+Return exactly:
+1. root cause found
+2. files changed
+3. whether frontend submit payload was correct or incorrect
+4. whether backend/media persistence was correct or incorrect
+5. whether feed/card rendering was correct or incorrect
+6. exact fix applied
+7. test result for Create Donation image save
+8. test result for Home page image rendering after save
+9. test result for Donation Details / My Donations image rendering
+10. whether uploaded images now persist and display correctly
+11. whether the app is still running
+12. any blocker that remains

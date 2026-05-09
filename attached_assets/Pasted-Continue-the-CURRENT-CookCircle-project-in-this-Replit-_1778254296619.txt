@@ -1,0 +1,259 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Sprint 1 is complete:
+- schema foundation exists
+- exact + area location model exists
+- location_confirmed exists
+- backend privacy shaping exists
+- area derivation exists
+- hide_address is removed from the privacy model
+- compatibility aliases currently exist temporarily
+
+Sprint 2 is complete:
+- structured address UI exists in Create/Edit
+- location confirmation flow exists
+- city suggestions exist
+- Street has Google Places path when browser key exists
+- fallback UI path exists when browser key is missing
+
+Sprint 3 is complete:
+- real backend geocoding path is hardened
+- geocode status/precision handling exists
+- zero_results are blocked server-side
+- confirmation flow reflects real backend geocode states
+- OpenAPI/types were updated
+
+Do NOT redo Sprint 1.
+Do NOT redo Sprint 2.
+Do NOT redo Sprint 3.
+Do NOT redesign the product.
+Do NOT change the approved product scope.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+This is SPRINT 4 — PRIVACY-AWARE MAP RENDERING + LOCATION UX COMPLETION.
+
+APPROVED SCOPE ONLY
+Keep everything strictly within:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+SPRINT 4 GOAL
+Fully realize the Airbnb-style map/location privacy model in the UI and API consumption layer, reduce legacy ambiguity, and make the location experience feel complete, trustworthy, and product-grade.
+
+IMPORTANT
+This sprint is mostly about map behavior, viewer-aware location UX, and cleanup of location-related compatibility usage.
+Do NOT do a broad redesign.
+Only do UI changes that are necessary for privacy-aware map rendering, trust, and consistency.
+
+FIXED CONSTRAINTS
+1. Backend remains the source of truth for what location data is visible
+2. Before approval:
+   - general area only
+   - no exact address
+   - no exact marker
+3. After approval/completion:
+   - exact address
+   - exact map
+   - exact marker
+4. Donor sees exact location for their own listing
+5. Public and pending viewers must never receive exact coordinates
+6. Fallback mode must never pretend to be exact
+7. General-area map must feel product-like and trustworthy
+8. address edit after approval remains a Sprint 5 QA edge case, not solved here
+
+EXECUTE IN THESE PHASES
+
+PHASE 1 — DONATION DETAILS FINAL LOCATION LOGIC
+Make Donation Details the canonical viewer-aware location experience.
+
+Requirements:
+1. detect correctly whether current viewer is:
+   - donor
+   - approved requester
+   - completed requester
+   - pending requester
+   - public viewer
+2. show the correct location state for each viewer
+3. approved/completed requester:
+   - exact address visible
+   - exact map visible
+   - exact marker visible
+4. donor:
+   - exact address visible
+   - exact map visible
+   - exact marker visible
+5. pending/public viewer:
+   - city / area only
+   - area map only
+   - no exact address
+   - no exact marker
+6. generic “not available” messaging must not appear incorrectly for approved requesters
+
+PHASE 2 — GENERAL-AREA MAP EXPERIENCE
+Make the pre-approval area map feel intentional and product-like.
+
+Requirements:
+1. use area_lat / area_lng / area_label / area_radius_meters correctly
+2. render a clear general-area map before approval
+3. do not show any exact marker in area mode
+4. show clear copy such as:
+   - Approximate area
+   - Exact address shared after approval
+   - Location not verified (when fallback/local)
+5. distinguish visually between:
+   - verified area privacy view
+   - fallback/not-verified area privacy view
+6. keep the experience clean and trustworthy
+
+PHASE 3 — EXACT MAP EXPERIENCE
+Make the post-approval exact map behavior feel complete and consistent.
+
+Requirements:
+1. exact map should render only when exact coordinates are truly allowed and available
+2. exact map should never render in fallback/local mode when exact coords are null
+3. exact map should have correct marker behavior
+4. exact map labels should be consistent and user-friendly
+5. exact address should appear only in the correct viewer states
+
+PHASE 4 — MAP COPY / LOCATION TRUST UX
+Improve the wording and product communication around location.
+
+Requirements:
+1. remove any technical/raw location UX that still feels too developer-like
+2. use trust-preserving product copy
+3. do not imply exact precision in fallback mode
+4. make location states easy to understand:
+   - verified exact location
+   - approximate area
+   - not verified / local fallback
+   - awaiting approval
+5. keep copy concise and product-like
+
+PHASE 5 — MY REQUESTS / MY DONATIONS LOCATION CONSISTENCY
+Ensure all other screens respect the same location visibility model.
+
+Requirements:
+1. My Requests must show the correct address level for each request state
+2. My Donations must remain correct for the donor view
+3. no privacy leaks via pills, labels, map previews, or helper text
+4. location presentation must be consistent with Donation Details
+5. no stale old address formatting if new structured fields are available
+
+PHASE 6 — COMPATIBILITY CLEANUP / REDUCTION
+Now that the structured location model is in place, reduce ambiguity.
+
+Requirements:
+1. audit where the frontend still relies on temporary API aliases such as:
+   - address
+   - latitude
+   - longitude
+   - areaLatitude
+   - areaLongitude
+2. switch the frontend to the new structured location fields where practical in this sprint
+3. keep only the minimum compatibility layer still needed
+4. do not do risky cleanup that breaks the app
+5. clearly document what compatibility aliases remain and why
+
+PHASE 7 — LOCATION-RELATED DOCS / API ACCURACY
+Update docs so they reflect the actual runtime behavior.
+
+Requirements:
+1. update docs/OpenAPI if the visible location behavior or field usage changed materially
+2. document clearly:
+   - before-approval area map
+   - after-approval exact map
+   - fallback/local not-verified behavior
+3. document any remaining compatibility aliases
+4. keep the docs accurate and honest
+
+PHASE 8 — NO REGRESSION QA
+Verify all current flows still work:
+- create donation
+- edit donation
+- delete donation where valid
+- donor lifecycle actions
+- request pickup
+- donor approve / decline
+- recipient complete pickup
+- review after completed request
+- session user switching
+- privacy gating
+- image handling
+- location preview
+- area map before approval
+- exact map after approval
+- filters / sorting / discovery
+
+Also verify Sprint 4-specific behavior:
+- public viewer never receives exact coords
+- pending requester never receives exact coords
+- approved requester sees exact location when allowed
+- donor sees exact location for own listing
+- fallback mode never renders fake exact map
+- Donation Details state is correct for all viewer types
+- My Requests / My Donations show correct location level
+
+MANDATORY NOTES TO HONOR
+1. Do NOT weaken backend privacy rules.
+2. Do NOT reintroduce hide_address behavior.
+3. Do NOT solve address-edit-after-approval here beyond preserving behavior.
+4. Do NOT remove compatibility aliases recklessly if some screens still depend on them.
+5. If real Google runtime is not active in this environment, stay honest and test the fallback/runtime behavior correctly.
+
+SPRINT 4 ACCEPTANCE CRITERIA
+This sprint is complete only if ALL are true:
+1. Donation Details behaves correctly for all viewer types
+2. public/pending viewers see only area-level location
+3. approved/completed requesters see exact location correctly
+4. donor sees exact location correctly
+5. fallback/local mode never shows fake exact map
+6. area map UX feels intentional and product-like
+7. location copy is clear and trustworthy
+8. My Requests / My Donations are aligned with the same privacy model
+9. compatibility usage is reduced or clearly documented
+10. current product flows still work without major regression
+11. Sprint 5 can begin without map/privacy ambiguity
+
+RULES
+- no broad redesign
+- no schema redesign unless absolutely necessary for correctness
+- no reopening Sprint 1/2/3
+- no discovery mode
+- no vague theory
+- no long essay
+- execution only
+- make the biggest practical progress possible in one sprint
+
+OUTPUT FORMAT
+When done, return exactly:
+1. files created or changed
+2. Donation Details / map logic changes made
+3. area map / exact map behavior implemented
+4. location trust/copy changes made
+5. My Requests / My Donations consistency changes made
+6. compatibility cleanup/reduction done
+7. docs/OpenAPI updates made
+8. whether the app is still running
+9. any regressions or blockers
+10. what remains for Sprint 5

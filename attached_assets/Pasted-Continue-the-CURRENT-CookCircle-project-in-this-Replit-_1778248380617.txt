@@ -1,0 +1,132 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Do NOT implement Sprint 1 yet.
+Do NOT write production code yet.
+Do NOT reopen broad discovery.
+Do NOT redesign the product scope.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+This is Sprint 0.1 — DECISION TIGHTENING only.
+
+GOAL
+Refine and harden the existing Sprint 0 implementation contract so Sprint 1 can begin with zero ambiguity and without risky product/architecture mistakes.
+
+IMPORTANT
+You already produced a good implementation contract.
+Do NOT rewrite the whole thing from scratch.
+Do NOT expand the scope.
+Only tighten the specific decision gaps listed below.
+
+FOCUS ONLY ON THESE 5 DECISION GAPS
+
+PHASE 1 — CITY INPUT DECISION
+The current contract says City is a select/dropdown from the seed list.
+That is too weak and too artificial for the real product.
+
+You must refine this decision and lock the correct approach:
+- should city be:
+  1. a free text field
+  2. a validated text field with suggestions
+  3. a dropdown from a real Israel city list
+  4. another hybrid approach
+
+Requirements:
+- choose one final approach
+- explain why it is the best fit for Israeli addresses and low ambiguity
+- define how the backend validates city values
+- do NOT rely on a seed-only city list
+
+PHASE 2 — LOCATION CONFIRMATION DECISION
+The current contract says geocoding is silent and automatic with no explicit confirmation step.
+This is too weak for a trust-sensitive product.
+
+You must lock the final decision for location confirmation:
+- should the donor be required to explicitly confirm the found location before publish?
+- when exactly should confirmation appear?
+- what should the donor see:
+  - normalized address
+  - exact map preview
+  - area preview
+  - confidence indicator
+- when can the donor continue without confirmation, if ever?
+
+Requirements:
+- choose one final product rule
+- make it implementation-ready
+- optimize for trust and low wrong-location risk
+
+PHASE 3 — FALLBACK / ZERO-RESULTS PUBLISH POLICY
+The current contract is too permissive: it allows publish in all cases with only advisory messaging.
+
+You must tighten the policy and lock the final behavior for:
+1. real successful geocode
+2. low-confidence geocode
+3. zero results
+4. provider error
+5. fallback-only mode
+
+For each case define clearly:
+- can the donation be published immediately?
+- can it be saved only as draft?
+- is area-only publish allowed?
+- is explicit user confirmation required?
+- what UI warning is shown?
+
+The final policy must preserve trust and avoid pretending to be precise.
+
+PHASE 4 — AREA LOCATION DERIVATION DECISION
+The current contract derives area_lat/area_lng by rounding exact coordinates to 2 decimals.
+This is technically simple but may not be privacy-safe or product-strong enough.
+
+You must lock the final approach for area derivation:
+- should it remain rounded coords?
+- should it use a minimum-radius fuzzed point?
+- should it use a city/neighborhood center?
+- should it use a grid cell / bucket?
+- should radius differ by city density?
+
+Requirements:
+- choose one final method
+- explain why it is privacy-safe and product-appropriate
+- define how area_label and area_radius_meters are generated
+- define how approximate map behavior uses this area location
+
+PHASE 5 — HIDE_ADDRESS / PRIVACY OVERRIDE DECISION
+The current contract leaves room for hide_address = false to expose full address broadly.
+This may contradict the Airbnb-style privacy model we want.
+
+You must lock the final rule:
+- can donors ever expose exact address to all viewers before approval?
+- or is the product rule always:
+  - before approval = general area only
+  - after approval = exact address/location only for approved requester + donor
+
+Requirements:
+- choose one final rule
+- keep it consistent with the privacy-first product direction
+- ensure backend remains source of truth
+
+OUTPUT REQUIREMENTS
+Do NOT rewrite the whole Sprint 0 contract.
+Return only a tight follow-up document that contains:
+
+1. Decision Gap 1 — final city input decision
+2. Decision Gap 2 — final location confirmation decision
+3. Decision Gap 3 — final fallback / zero-results policy
+4. Decision Gap 4 — final area derivation method
+5. Decision Gap 5 — final hide_address / privacy rule
+6. Updated acceptance criteria impacted by these changes
+7. Any implications for Sprint 1 scope
+
+RULES
+- no coding
+- no broad discovery
+- no vague theory
+- no large alternative comparisons
+- no reopening already-good parts of the contract
+- only tighten these 5 decisions
+- be precise enough that Sprint 1 can start immediately after this

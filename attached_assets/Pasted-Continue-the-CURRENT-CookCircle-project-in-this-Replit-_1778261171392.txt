@@ -1,0 +1,107 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+Do NOT redesign the app.
+Do NOT change product scope.
+Do NOT touch backend geocoding logic unless required for compatibility.
+This is a focused frontend integration fix only.
+
+## Root cause already identified
+The current Street autocomplete implementation is using legacy Google Places APIs:
+- google.maps.places.Autocomplete
+- AutocompleteService
+
+Browser console shows:
+- warning that google.maps.places.Autocomplete is legacy / not available for new customers
+- LegacyApiNotActivatedMapError
+
+So the current Street autocomplete path is built on a legacy Places flow that is not enabled for this project.
+
+## Goal
+Replace the current legacy Street autocomplete implementation with the correct modern Google Places path for new projects.
+
+## Important
+Do NOT solve this by enabling old/legacy APIs unless absolutely unavoidable.
+Preferred solution:
+- migrate the Street autocomplete implementation to the current supported Places API (New) approach
+- use the modern Google Maps JS places integration path
+- preserve current UX and structured address flow as much as possible
+
+## Scope
+Only fix:
+- the Street autocomplete implementation
+- any directly related frontend loader/util code
+- minimal integration glue required to keep Create/Edit Donation working
+
+Do NOT:
+- redesign the form
+- change the backend confirmation flow
+- change privacy logic
+- change donation lifecycle logic
+- refactor unrelated screens
+
+## What to do
+
+### Phase 1 — inspect current implementation
+Inspect the current frontend code that loads Google Maps JS and wires Street autocomplete.
+Find:
+- the loader function
+- the StreetAutocompleteInput or equivalent
+- the places/autocomplete hookup
+- any direct use of:
+  - google.maps.places.Autocomplete
+  - google.maps.places.AutocompleteService
+
+### Phase 2 — migrate off legacy autocomplete
+Replace the legacy autocomplete approach with the modern Places API path appropriate for new Google Maps projects.
+
+Requirements:
+1. no use of legacy Autocomplete / AutocompleteService
+2. use the current supported Places autocomplete approach
+3. keep country restricted to Israel where applicable
+4. when a place is selected, continue to populate:
+   - street
+   - city when available
+   - house number when available
+5. keep graceful fallback if the browser key is missing or Google fails to load
+6. do not break manual typing
+
+### Phase 3 — preserve current product behavior
+The Create/Edit address flow must still work:
+1. structured fields remain
+2. location confirmation step remains
+3. fallback path remains honest
+4. no regression to the current publish flow
+
+### Phase 4 — verify runtime
+After migration, verify:
+1. the Google popup error no longer appears
+2. no LegacyApiNotActivatedMapError remains
+3. Street autocomplete works for an Israeli address input
+4. manual typing still works if autocomplete is unavailable
+
+### Phase 5 — security hygiene
+If any key handling needs cleanup, keep it minimal and safe.
+Do NOT print secrets.
+Do NOT expose server-only keys.
+Only use the browser/public key in the frontend.
+
+## Acceptance criteria
+This task is complete only if all are true:
+
+1. Street autocomplete no longer depends on legacy Places APIs.
+2. LegacyApiNotActivatedMapError is gone.
+3. The Street field still supports Google-powered autocomplete for supported projects.
+4. Selected suggestions still populate the structured address fields correctly.
+5. Manual typing still works.
+6. Create/Edit donation flows still work.
+7. No unrelated regressions are introduced.
+
+## Output format
+Return exactly:
+1. root cause confirmed
+2. files changed
+3. legacy API usage removed or not removed
+4. new autocomplete approach implemented
+5. runtime verification result
+6. whether the app is still running
+7. any blocker that remains

@@ -1,0 +1,20 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "q6fs1jJhD1P_RlKMa7lsR"
+uri = "file://CookCircle_QA_Bundle.zip"
+type = "unspecified"
+title = "CookCircle_QA_Bundle.zip"
+
+[[outputs]]
+id = "TthN8KIrM21tTLA0f0k97"
+uri = "file://cookcircle-project.tar.gz"
+type = "unspecified"
+title = "CookCircle Project — Full Source Code"
+
+[[outputs]]
+id = "6_dzwVuxq_2NGQks37uNC"
+uri = "file://cookcircle-source.tar.gz"
+type = "unspecified"
+title = "CookCircle — Full Source Code (.tar.gz)"

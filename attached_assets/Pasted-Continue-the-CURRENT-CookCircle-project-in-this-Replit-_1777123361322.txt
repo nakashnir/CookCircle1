@@ -1,0 +1,189 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full context.
+The CURRENT project is the source of truth.
+
+Do NOT redesign the product.
+Do NOT change product scope.
+Do NOT add new features outside the approved CookCircle scope.
+Do NOT break any currently working flow.
+
+APPROVED SCOPE ONLY
+Keep the project strictly within:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+CURRENT GOAL
+Execute one focused QA Fix Sprint that closes the remaining real gaps.
+
+This is NOT a broad redesign sprint.
+This is NOT a new feature sprint.
+This is a targeted correction + refinement sprint.
+
+PRIORITY GAPS TO CLOSE
+
+PHASE 1 — EXACT INTEGRATION VERIFICATION
+I need exact truth, not vague wording.
+
+Inspect the CURRENT runtime and report clearly:
+1. Is Cloudinary currently running with real credentials or fallback?
+2. Is the location provider currently running with real credentials or fallback?
+3. If real:
+   - specify provider name
+   - specify env var names present only
+   - specify which real code path is active
+4. If fallback:
+   - state clearly that fallback is active
+   - specify which fallback path is active
+5. Make the docs reflect the exact truth.
+6. If the UI currently implies “real integration” when it is actually fallback, fix the wording/UI so it is honest.
+
+Important:
+- never print secret values
+- names only
+- facts only
+
+PHASE 2 — REMOVE RAW / TECHNICAL LOCATION UX
+Location behavior should not feel technical or misleading.
+
+Requirements:
+1. remove raw coordinate-style UX from the frontend
+2. do not show coordinate chips like "32.117, 34.815" to normal users
+3. replace technical/raw location displays with product-friendly language
+4. if location is in fallback mode:
+   - present it safely and clearly
+   - do not imply exact real-world precision
+5. keep privacy rules intact:
+   - no full address before approval
+   - general location only before approval
+   - full pickup details after approval/completion only
+
+PHASE 3 — REAL RESPONSIVE PASS
+Do a true responsive pass, not just desktop polish.
+
+Requirements:
+1. inspect Home, My Donations, My Requests, Profile, and Create Donation on smaller widths
+2. improve layout, spacing, stacking, and action placement where needed
+3. make sure cards, forms, filters, and action panels scale gracefully on tablet/mobile
+4. do not overengineer — just make it clearly better and robust
+5. after changes, verify the app still works across the main screens
+
+PHASE 4 — REAL ACCESSIBILITY PASS
+Do more than focus rings.
+
+Requirements:
+1. improve semantic clarity where practical
+2. improve button / form accessibility
+3. improve labels / structure where weak
+4. improve keyboard usability where practical
+5. improve contrast or low-clarity areas if needed
+6. improve empty state clarity where needed
+7. keep changes practical and lightweight
+
+PHASE 5 — SAFER LIFECYCLE / ACTION UX IN MY DONATIONS
+Current donor action UX still has risk.
+
+Requirements:
+1. review donor-side lifecycle actions carefully
+2. make dangerous actions safer and more product-appropriate
+3. specifically review whether Delete listing should be available/visible on reserved or otherwise active donations
+4. improve the action hierarchy so destructive actions are appropriately guarded or de-emphasized
+5. keep lifecycle rules valid and do not break backend logic
+
+PHASE 6 — FINAL POLISH ON THE REMAINING WEAK SCREENS
+Focus only on:
+- My Requests
+- Create Donation
+- Profile
+
+My Requests:
+- improve scanability
+- reduce overly mechanical right-side action feeling
+- tighten spacing and hierarchy
+- make approved/pending/completed feel more polished
+
+Create Donation:
+- reduce plain-form feeling
+- improve section rhythm
+- improve upload block polish
+- improve privacy settings presentation
+
+Profile:
+- improve usefulness of the summary area
+- reduce weak/placeholder-feeling metrics
+- improve balance between the hero section and the form sections below
+
+PHASE 7 — NO REGRESSION QA
+After all changes, verify that all current flows still work:
+- create donation
+- edit donation
+- delete donation where valid
+- donor lifecycle actions
+- request pickup
+- donor approve / decline
+- recipient complete pickup
+- review after completed request
+- session user switching
+- privacy gating
+- image handling
+- location preview
+- filters / sorting / discovery
+
+Fix any real regressions with the smallest safe change set.
+
+MANDATORY SUCCESS CRITERIA
+This sprint is only complete if ALL are true:
+
+1. The app still runs correctly
+2. No core approved flow is broken
+3. Cloudinary status is clearly verified as real or fallback
+4. Location provider status is clearly verified as real or fallback
+5. Raw/technical location UX is removed from normal user-facing UI
+6. Responsive behavior is visibly improved
+7. Accessibility is improved beyond only focus rings
+8. My Donations actions are safer and better structured
+9. My Requests / Create Donation / Profile visibly improve
+10. Docs accurately reflect the real runtime truth
+
+RULES
+- keep changes within the current codebase
+- prefer targeted fixes over rewrites
+- no scope creep
+- no feature expansion
+- no long essay
+- no product brainstorming
+- execution only
+- make the biggest practical progress possible in one sprint
+
+OUTPUT FORMAT
+When done, return exactly:
+1. remaining root problems found
+2. files created or changed
+3. what was fixed in each phase
+4. whether the app is running
+5. preview / webview path
+6. exact integration status:
+   - Cloudinary real or fallback
+   - location provider real or fallback
+7. what changed in responsive behavior
+8. what changed in accessibility
+9. what changed in My Donations / My Requests / Create / Profile
+10. any regressions fixed
+11. any real remaining gaps

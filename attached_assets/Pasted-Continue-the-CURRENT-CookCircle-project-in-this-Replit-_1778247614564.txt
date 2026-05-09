@@ -1,0 +1,224 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Do NOT implement the feature yet.
+Do NOT write production code yet.
+Do NOT redesign the product scope.
+Do NOT reopen broad discovery.
+Do NOT compare multiple architectures unless there is a real blocker.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+This sprint is a DECISION LOCK + IMPLEMENTATION CONTRACT sprint only.
+
+GOAL
+Lock the exact architecture, product flow, privacy model, and implementation plan for the new address / geocoding / map-privacy pipeline, so Sprint 1 can start with zero ambiguity.
+
+IMPORTANT
+The architectural direction is already chosen.
+Use these as fixed constraints unless you find a hard technical blocker:
+
+FIXED DECISIONS
+1. Primary provider direction: Google Maps Platform
+   - Places / Autocomplete
+   - Geocoding / Address Validation
+   - Google Maps rendering
+2. Address input should NOT remain free-text only
+3. Use structured address fields:
+   - city
+   - street
+   - house number
+   - private pickup notes (optional/private)
+4. Store both:
+   - exact location
+   - general area location
+5. Backend is the source of truth for privacy and location visibility
+6. Product privacy model must behave like Airbnb:
+   - before approval: general area only
+   - after approval: exact address + exact map
+7. Fallback mode must never pretend to be precise
+
+Your task is NOT to rediscover the strategy.
+Your task is to convert these decisions into a precise implementation contract.
+
+APPROVED SCOPE ONLY
+Keep everything strictly within the approved CookCircle scope:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+WHAT YOU MUST PRODUCE
+
+PHASE 1 — LOCK THE ADDRESS INPUT CONTRACT
+Define the exact frontend product contract for address entry.
+
+You must specify:
+1. exact fields shown to donor
+2. which fields are required vs optional
+3. which fields remain private
+4. how address normalization should work before geocoding
+5. when autocomplete is used
+6. what happens if user types text that does not match a valid place
+
+Do NOT leave this vague.
+
+PHASE 2 — LOCK THE GEOCODING + CONFIRMATION CONTRACT
+Define the exact server/client flow from address input to confirmed location.
+
+You must specify:
+1. when geocoding runs
+2. what data is sent to Google
+3. what data is returned and stored
+4. when donor must confirm location
+5. what happens if confidence is low
+6. what happens if provider fails
+7. what happens when a donor edits address later
+
+PHASE 3 — LOCK THE DATA MODEL
+Define the exact final data model to support privacy-safe maps.
+
+Use this direction and refine it into a final contract:
+- country
+- city
+- street
+- house_number
+- address_private_notes
+- formatted_address
+- place_id
+- geocode_provider
+- geocode_status
+- geocode_precision
+- exact_lat
+- exact_lng
+- area_lat
+- area_lng
+- area_label
+- area_radius_meters
+
+You must explicitly say:
+1. which fields are persisted
+2. which are derived
+3. which are public
+4. which are private
+5. which are only visible after approval
+
+PHASE 4 — LOCK THE PRIVACY MATRIX
+Create the exact location visibility matrix for:
+1. public viewer
+2. pending requester
+3. approved requester
+4. completed requester
+5. donor
+
+For each viewer type, define whether they receive:
+- city
+- area label
+- approximate map
+- exact address
+- exact coordinates
+- exact marker
+- pickup instructions
+
+The answer must be explicit and table-like.
+
+PHASE 5 — LOCK THE MAP UX CONTRACT
+Define the exact behavior of the map before approval vs after approval.
+
+Before approval:
+- general area only
+- no exact marker
+- no exact address
+
+After approval/completion:
+- exact address
+- exact map
+- exact marker
+
+You must define:
+1. what approximate map means technically
+2. what exact map means technically
+3. what zoom/precision difference should exist
+4. how to avoid false precision in fallback mode
+
+PHASE 6 — LOCK THE FALLBACK POLICY
+Define the exact behavior when Google services are unavailable.
+
+You must specify:
+1. whether publish is blocked
+2. whether draft save is allowed
+3. whether area-only publish is allowed
+4. how the UI should communicate fallback mode
+5. how trust is preserved
+6. how local/dev/demo mode differs from real integrated mode
+
+PHASE 7 — LOCK THE IMPLEMENTATION ROADMAP
+Break the implementation into concrete follow-up sprints.
+
+Required roadmap:
+- Sprint 1: DB + backend foundation
+- Sprint 2: address input UI
+- Sprint 3: geocoding + confirmation
+- Sprint 4: privacy-aware map rendering
+- Sprint 5: QA / edge cases
+- Sprint 6: polish + docs
+
+For each sprint, define:
+1. goal
+2. exact tasks
+3. acceptance criteria
+4. dependencies / risks
+
+PHASE 8 — LOCK ACCEPTANCE CRITERIA
+Define final testable acceptance criteria for the entire solution.
+
+These must include:
+- public viewers never receive exact coordinates
+- approved requesters see exact pickup location
+- donors confirm exact location before publish
+- fallback mode never pretends to be precise
+- Hebrew and English Israeli addresses are handled correctly
+- backend remains source of truth for visibility
+
+RULES
+- no coding
+- no vague theory
+- no discovery mode
+- no reopening solved decisions
+- no large alternative comparisons unless a blocker is found
+- be practical and implementation-ready
+- think like a product architect + backend architect + UX architect
+
+REQUIRED OUTPUT FORMAT
+Return exactly these sections:
+
+1. Locked implementation strategy
+2. Locked provider decision
+3. Locked address input contract
+4. Locked geocoding + confirmation contract
+5. Locked data model
+6. Locked privacy matrix
+7. Locked map UX contract
+8. Locked fallback policy
+9. Sprint roadmap (Sprint 1 to Sprint 6)
+10. Risks / blockers only
+11. Final acceptance criteria
+
+This sprint is complete only when the output is precise enough that Sprint 1 can begin without ambiguity.

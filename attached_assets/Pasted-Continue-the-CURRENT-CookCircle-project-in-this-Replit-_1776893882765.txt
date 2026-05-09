@@ -1,0 +1,154 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+Do not redesign from scratch.
+Do not change the approved product scope.
+Do not add features outside the approved MVP/system scope.
+
+Approved scope only:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media/location integration
+7. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+Current status:
+- frontend works
+- backend API works
+- end-to-end flow works
+- donor-side request management exists
+- edit donation exists
+- success/error handling exists
+- current project in Replit is the source of truth
+
+Now execute the next major sprint:
+
+MAIN GOAL
+Move the project from a working MVP prototype into a more complete, cleaner, and more robust system aligned with the approved technical scope.
+
+PHASE 1 — DATABASE UPGRADE
+1. inspect whether DATABASE_URL is available
+2. if DATABASE_URL is available, replace JSON persistence with a real relational database layer
+3. preferred implementation:
+   - Postgres in this Replit workspace
+   - clean schema for:
+     users
+     donations
+     pickup_requests
+     reviews
+4. add seed/init logic
+5. preserve all current working flows
+6. if Postgres is already partially available, reuse it rather than rebuilding unnecessarily
+
+PHASE 2 — KEEP ALL CURRENT FLOWS WORKING
+Preserve and keep working:
+- create donation
+- edit donation
+- delete donation
+- request pickup
+- donor approve / decline
+- recipient complete pickup
+- review after completed request
+- refresh-safe persistence
+
+PHASE 3 — CLIENT DATA LAYER CLEANUP
+Refactor the frontend data layer to be cleaner without changing the UI structure.
+
+Requirements:
+- move API calls/fetch logic out of the main App component into a small dedicated client module (for example src/lib/api.ts or similar)
+- keep the app simple
+- do not overengineer
+- do not introduce a heavy state library
+- keep the current screens and flow unchanged
+
+PHASE 4 — MEDIA + LOCATION SERVICE LAYER
+Create practical integration/service layers for:
+- media
+- location
+
+Requirements:
+- if real credentials exist, use them
+- otherwise keep a clean env-based adapter with stable fallback behavior
+- preserve the current image/location data model
+- do not get blocked by missing external credentials
+
+PHASE 5 — BACKEND HARDENING
+Add minimum real hardening:
+- validation
+- correct status transitions
+- duplicate guards
+- clean API errors
+- transactional safety where needed
+- stable seed/demo data
+- no breaking changes to the working frontend
+
+PHASE 6 — DEPLOYMENT / HANDOFF READINESS
+Create the minimum files needed so the project is easier to run and understand:
+- .env.example (if appropriate)
+- short README with run steps
+- short seed/reset instructions
+- note any required environment variables clearly
+
+PHASE 7 — KEEP MVP RULES INTACT
+Statuses must remain exactly:
+
+Donation:
+- available
+- reserved
+- picked_up
+- cancelled
+- expired
+
+PickupRequest:
+- pending
+- approved
+- cancelled
+- completed
+
+Dietary tags must remain exactly:
+- kosher
+- gluten_free
+- vegan
+- vegetarian
+
+Privacy rules:
+- no full address before approval
+- only general location before approval
+- full pickup details only after approval/completion
+
+PHASE 8 — DO NOT EXPAND SCOPE
+Do not add auth unless absolutely necessary.
+Do not add notifications.
+Do not add chat.
+Do not add admin.
+Do not add extra product flows.
+Do not add expire-donation now unless it is necessary for data consistency (otherwise skip it).
+
+OUTPUT FORMAT
+When done, return exactly:
+1. approach used
+2. files created or changed
+3. what was completed against the approved scope
+4. commands used
+5. preview/webview path
+6. any real remaining gaps
+
+Rules:
+- no audit
+- no long essay
+- no product brainstorm
+- no scope creep
+- execution only
+- make the biggest practical progress possible in one sprint

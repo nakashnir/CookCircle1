@@ -1,0 +1,109 @@
+You are working on the CURRENT CookCircle project in this Replit workspace.
+
+Do not redesign the product.
+Do not change scope.
+Do not change business logic.
+Do not touch backend behavior unless absolutely needed.
+This task is a focused UI/layout fix only.
+
+Problem
+
+On the Create Donation page, several section titles are visually clipped / too close to the card edges.
+
+The affected section titles are:
+
+"About the food"
+"Photo"
+"Privacy"
+
+From the current UI, it looks like:
+
+the section title text is touching or overlapping the card border area
+the spacing above / left of the title is too tight
+in some cases the title appears visually cut
+the header row layout is inconsistent
+Your task
+
+Fix the Create Donation page layout so the section headers render cleanly and consistently.
+
+Scope
+
+Only fix the page structure / styling for the Create Donation screen and any shared styles directly responsible for this layout issue.
+
+Do NOT redesign the visual language.
+Do NOT replace the current design system.
+Do NOT introduce new product features.
+Do NOT make broad changes across the whole app unless they are shared card/title styles required for this fix.
+
+What to fix
+Ensure section titles are fully visible and not clipped.
+Ensure each section header has proper internal spacing:
+enough top padding
+enough left/right padding
+consistent vertical rhythm
+If any title is using:
+negative margins
+absolute positioning
+translate transforms
+overflow clipping
+remove or refactor that approach.
+Make the card header layout consistent for:
+left title text
+right helper label like "Optional"
+Ensure the title sits cleanly inside the card, not on the border.
+Keep the current typography and design feel, but make it polished and production-clean.
+Likely implementation direction
+
+Please inspect the Create Donation component and its related CSS/classes.
+
+Use a stable structure like:
+
+section card container
+inner header row
+body content
+
+The header row should:
+
+be inside the card
+use flex layout
+align title left and helper text right
+have consistent padding
+not depend on fragile offsets
+
+If needed:
+
+increase card padding
+separate header from body with margin-bottom
+make sure overflow does not cut the title
+normalize heading margins
+Important
+
+The issue is specifically visible on desktop widths like approximately 1366–1440 px.
+Please verify the fix on desktop and also ensure it still looks good on tablet/mobile.
+
+Acceptance criteria
+
+The task is complete only if all of the following are true:
+
+On Create Donation, the titles "About the food", "Photo", and "Privacy" are fully visible.
+No title touches or overlaps the card border.
+Header spacing is visually consistent across sections.
+"Optional" on the right aligns properly and does not collide with the title.
+No clipping happens at normal desktop widths.
+The current visual style is preserved.
+No business logic or page flow is broken.
+Output format
+
+Please:
+
+inspect the current implementation
+make the minimum clean code changes needed
+run the app
+report:
+which files you changed
+what the root cause was
+what exact fix you applied
+whether the Create Donation page is now visually correct
+
+Do not give me a long essay.
+Execution only.

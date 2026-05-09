@@ -1,0 +1,267 @@
+You are now working on CookCircle as a SENIOR FULL-STACK ENGINEER + QA-MINDED IMPLEMENTER.
+
+Project context:
+CookCircle is a web application for community food sharing/donation. The approved scope is NOT a broad social network. The current core scope is:
+1. Donation Lifecycle
+2. Pickup Request / Reservation Flow
+3. Review / Rating Flow
+4. DB-backed persistence
+5. Media/image flow
+6. Location/privacy flow
+
+The system already has working image and location flows according to current manual testing. DO NOT rewrite image/location. DO NOT open new product scope. DO NOT add chat, AI, admin dashboard, payments, notifications, or unrelated features.
+
+We are now starting SPRINT 1: REAL MINIMAL AUTH.
+
+====================================================
+SPRINT GOAL
+====================================================
+
+Replace the current demo-only session switching model with a minimal real local authentication system suitable for academic submission.
+
+Current problem:
+The app currently uses demo session switching / selected seed users, not real login/register with username/password. The submission requires a public server URL with login using username/password. The system must support real users attached to donations, pickup requests, and reviews.
+
+Goal:
+Implement a stable, minimal, local email/password authentication flow:
+- Register
+- Login
+- Logout
+- Current authenticated user/session
+- Protected actions
+- Demo credentials for submission
+- No breaking of existing donation/request/review/image/location flows
+
+====================================================
+STRICT SCOPE
+====================================================
+
+Implement ONLY the minimal auth layer required for submission readiness.
+
+Allowed:
+- Add password hash field to users table/schema
+- Add/register auth routes
+- Add login/logout/current user routes
+- Replace or hide demo user switcher for normal app usage
+- Add minimal Login/Register UI
+- Ensure existing flows use authenticated current user
+- Seed demo users with known demo passwords
+- Update README / DEMO_GUIDE / .env.example if needed
+- Add lightweight tests or manual verification checklist
+
+Not allowed:
+- Do not implement Google login
+- Do not implement Cognito
+- Do not implement OTP/2FA
+- Do not implement role-based admin system unless already exists and required
+- Do not rewrite image upload
+- Do not rewrite location/geocoding
+- Do not change donation/request/review business logic except where required to enforce auth
+- Do not redesign the UI
+- Do not introduce a large auth framework unless absolutely necessary
+- Do not expose secrets
+- Do not commit real passwords/secrets except harmless demo credentials intended for local/demo use
+
+====================================================
+IMPLEMENTATION REQUIREMENTS
+====================================================
+
+1. Inspect the current codebase first
+Before changing anything, inspect:
+- backend session/auth-related files
+- users schema/model
+- seed data
+- API routes for session/users
+- frontend current-user/session logic
+- current user switcher UI
+- places where currentUser is used for donation/request/review actions
+
+Then implement the smallest safe patch.
+
+2. Backend auth
+Add real local auth using email + password.
+
+Required endpoints, names may follow existing API style:
+- POST /api/auth/register
+- POST /api/auth/login
+- POST /api/auth/logout
+- GET /api/auth/me
+
+If the existing code already has /api/session/me or similar, you may keep compatibility aliases, but the final behavior must support real email/password login.
+
+Register:
+- Accept name, email, password, optionally phone/city if current user model supports it.
+- Validate email format minimally.
+- Validate password length, minimum 8 chars.
+- Reject duplicate email.
+- Store password as hash, never plain text.
+- Return safe user object only.
+
+Login:
+- Accept email + password.
+- Verify password against passwordHash.
+- Set server session/cookie.
+- Return safe user object only.
+
+Logout:
+- Clear session/cookie.
+
+Me:
+- Return current authenticated user if logged in.
+- Return 401 if not logged in.
+
+Password hashing:
+- Prefer bcryptjs if already installed.
+- If not installed and avoiding dependency is better, use Node crypto scrypt/pbkdf2 with salt.
+- Do not store plain passwords.
+
+Session:
+- Use the current cookie/session structure if possible, but make it real.
+- Cookie should be httpOnly.
+- sameSite should be reasonable for Replit deployment.
+- secure should be enabled only when compatible with deployment/runtime.
+- Session must not auto-default anonymous users to user 1.
+
+3. Authorization enforcement
+Require authenticated user for all user-specific mutations:
+- create donation
+- edit donation
+- delete/cancel/reopen donation
+- create pickup request
+- approve/decline/cancel/complete pickup request
+- create review
+- profile updates if any
+
+Do not allow unauthenticated users to mutate app state.
+
+Public read endpoints may remain public:
+- list available donations
+- view public donation details if the app currently allows it
+
+Important:
+Existing ownership rules must remain:
+- A donor can manage only their own donations
+- A requester can manage only their own requests where appropriate
+- Donor can approve/decline requests for their own donations
+- Review only after completed request, no duplicate review
+
+4. User object safety
+Do not return passwordHash or auth-sensitive fields to frontend.
+
+Create a safeUser helper if needed:
+- id
+- name
+- email if currently displayed/needed
+- avatar/profile fields if present
+- rating fields if present
+- city/phone only if product currently needs it
+But never passwordHash.
+
+5. Frontend auth UI
+Add minimal UI flow:
+- If not logged in, show Login/Register screen or modal.
+- Login with email/password.
+- Register new user.
+- Logout button visible when logged in.
+- Current user displayed clearly.
+- Remove or hide demo user switcher from normal user flow.
+
+Keep demo usability:
+- The demo must still be easy for reviewers.
+- Show demo credentials somewhere safe and clear, either on login screen as “Demo users” or in DEMO_GUIDE.
+- Example demo credentials:
+  - donor@cookcircle.demo / CookCircle123!
+  - requester@cookcircle.demo / CookCircle123!
+  - admin or third demo user only if already useful
+
+Do not break existing design. Keep UI minimal and consistent.
+
+6. Seed/demo users
+Update seed data so existing demo users have password hashes.
+
+Important:
+- Do not break existing seed donations/requests/reviews.
+- Preserve existing user IDs if current seed data depends on them.
+- Ensure at least two demo users can complete the full E2E flow:
+  - User A donor
+  - User B requester
+
+7. Existing flow compatibility
+After login implementation, these flows must still work:
+- User A logs in
+- User A creates donation with image and confirmed location
+- User B logs in
+- User B sees available donation
+- User B sends pickup request
+- User A logs in again
+- User A approves request
+- User B completes or flow reaches completion according to current app logic
+- User B submits review
+- Data persists after refresh
+
+8. Do not regress image/location
+Since image and location currently work, treat them as protected flows.
+After auth changes, verify:
+- Image still appears after publish and refresh
+- Location confirmation still works
+- Privacy behavior still works:
+  - public/pending requester sees general area only
+  - donor/approved requester sees exact address/location where applicable
+
+9. Documentation
+Update documentation minimally:
+- README or DEMO_GUIDE:
+  - How to run app
+  - Demo login credentials
+  - Full E2E demo script
+- .env.example only if auth requires SESSION_SECRET or similar
+- Mention that auth is local demo auth for academic submission, not production-grade enterprise auth
+
+10. Tests / verification
+Run the available project checks:
+- npm install / pnpm install only if needed and supported by repo
+- npm run build
+- npm run typecheck if available
+- npm test if available
+- backend start / health check if available
+
+If there are no tests, create a clear manual QA checklist and include results.
+
+====================================================
+ACCEPTANCE CRITERIA
+====================================================
+
+Sprint 1 is DONE only if all are true:
+
+1. App no longer relies on default user 1 for unauthenticated sessions.
+2. A user can register with email/password.
+3. A user can login with email/password.
+4. A user can logout.
+5. Refresh keeps authenticated session if cookie/session is valid.
+6. Unauthenticated users cannot create/update/delete donations, requests, or reviews.
+7. Existing donation/request/review ownership guards still work.
+8. Existing image flow still works after auth patch.
+9. Existing location flow still works after auth patch.
+10. Public deployment/demo can provide reviewer with a URL + username/password.
+11. No passwordHash is ever returned to frontend/API responses.
+12. No unrelated feature scope was added.
+
+====================================================
+OUTPUT REQUIRED
+====================================================
+
+When finished, report:
+
+1. Summary of what changed
+2. Exact files changed
+3. Backend endpoints added/changed
+4. Database/schema/seed changes
+5. Frontend auth flow changes
+6. Demo credentials
+7. Commands run and results
+8. Manual QA checklist and results
+9. Any remaining risks or blockers
+
+Do not claim “done” unless build and/or manual verification passed.
+
+Start by inspecting the codebase, then implement the patch.

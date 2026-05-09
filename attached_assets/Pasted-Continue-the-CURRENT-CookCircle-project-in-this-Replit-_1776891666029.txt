@@ -1,0 +1,125 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+Do not redesign from scratch.
+Do not change the approved MVP scope.
+Do not move to Postgres yet.
+Do not add new features outside the approved MVP.
+
+Approved MVP scope only:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media/location placeholders
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+Current status:
+- frontend runs
+- backend API exists
+- JSON persistence exists
+- frontend is connected to API
+- this current running project is the source of truth
+
+Now execute the next sprint:
+
+MAIN GOAL
+Complete the missing functional gaps so the 3 approved MVP flows work end-to-end in a more realistic way.
+
+PHASE 1 — COMPLETE DONOR-SIDE REQUEST MANAGEMENT
+In My Donations:
+1. show incoming pickup requests per donation
+2. show request status clearly
+3. add donor actions:
+   - Approve request
+   - Decline request
+4. wire these actions to the backend
+5. approval should set:
+   - request status = approved
+   - donation status = reserved
+6. decline should set:
+   - request status = cancelled
+   - donation status back to available when appropriate
+
+PHASE 2 — ADD DONATION EDITING
+1. add Edit action in My Donations
+2. allow editing the existing donation fields in the current MVP only
+3. connect it to PATCH /api/donations/:id
+4. keep privacy/discreet fields editable too
+
+PHASE 3 — HARDEN THE FULL REQUEST FLOW
+Make sure this works end-to-end:
+- recipient opens donation
+- recipient sends pickup request
+- donor sees incoming request in My Donations
+- donor approves or declines
+- recipient sees updated request state in My Requests
+- recipient marks pickup as completed
+- review becomes available only after completed
+- submitted review persists after refresh
+
+PHASE 4 — KEEP MVP RULES INTACT
+Statuses must remain exactly:
+
+Donation:
+- available
+- reserved
+- picked_up
+- cancelled
+- expired
+
+PickupRequest:
+- pending
+- approved
+- cancelled
+- completed
+
+Dietary tags must remain exactly:
+- kosher
+- gluten_free
+- vegan
+- vegetarian
+
+Privacy rule:
+- do not show full address before approval
+- before approval show city / general location only
+- after approval/completion full pickup details may be shown
+
+Validation rules:
+- cannot request a donation unless it is available
+- cannot review unless request is completed
+- completing a request must update donation to picked_up
+- keep discreet/privacy behavior working
+
+PHASE 5 — SMALL UX HARDENING
+Add only minimal UX improvements needed for a working MVP:
+- loading states where needed
+- error handling for failed API actions
+- small success feedback
+- empty states if needed
+
+PHASE 6 — KEEP CHANGES SMALL AND SAFE
+- keep the existing UI structure
+- no broad redesign in this step
+- no auth
+- no unnecessary libraries
+- no infra expansion
+- no Postgres migration yet
+
+OUTPUT FORMAT
+When done, return exactly:
+1. files changed
+2. what functional gaps were closed
+3. commands used
+4. preview/webview path
+5. any real remaining issues

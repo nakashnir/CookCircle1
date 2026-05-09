@@ -1,0 +1,1108 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.2.0
+  description: |
+    CookCircle API — food donation and sharing platform.
+    All endpoints are prefixed `/api` and served by the Express backend.
+
+    **Session model**: No real auth. The active user is stored in a server-side session
+    cookie. Use `POST /api/session/select-user` to switch the demo user.
+
+    **Integration status**: Two optional integrations are supported but not required.
+    - Media: `CLOUDINARY_*` env vars → real image upload; otherwise deterministic placeholder.
+    - Location: `GOOGLE_MAPS_API_KEY` (server-side only, never exposed to frontend) →
+      real Google Geocoding API; otherwise deterministic pseudo-coordinates derived
+      from the address string (local/demo mode). Browser-side autocomplete uses a
+      separate public key (`VITE_GOOGLE_MAPS_PUBLIC_KEY`).
+    - Call `GET /api/health` to check which adapters are active at runtime.
+
+    **Geocode status model** (Sprint 3):
+    - `ok + rooftop/interpolated` — high-confidence, street-level match. Normal publish.
+    - `ok + center/approximate` — Google matched but at neighborhood/area level.
+      Donor must confirm explicitly before publishing.
+    - `zero_results` — Google ran but found nothing. Cannot publish; donor must fix address.
+    - `error` — Google key configured but API call failed. Honest degradation; publish allowed
+      with advisory warning.
+    - `fallback` — No Google key. Local/demo mode. Publish allowed with advisory warning.
+
+    **Privacy model**:
+    - `canSeeAddress = false` (public/pending) → area coords + city only.
+    - `canSeeAddress = true` (donor or approved/completed requester) → exact coords + full address.
+    - In local/fallback mode, `exactLat`/`exactLng` are always null (never fake precision).
+
+servers:
+  - url: /api
+    description: Base API path
+
+tags:
+  - name: health
+    description: Service health and integration status
+  - name: session
+    description: Demo session / user switching
+  - name: users
+    description: User profiles
+  - name: donations
+    description: Donation lifecycle
+  - name: geocode
+    description: Address geocoding utilities
+  - name: requests
+    description: Pickup request management
+  - name: reviews
+    description: Post-pickup reviews
+
+paths:
+  # ── Health ──────────────────────────────────────────────────────────────────
+  /health:
+    get:
+      operationId: getCookcircleHealth
+      tags: [health]
+      summary: Integration health check
+      description: Returns runtime status for database, media, and location adapters.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CookcircleHealth"
+
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Liveness probe
+      description: Minimal liveness check used by infrastructure probes.
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── Session ──────────────────────────────────────────────────────────────────
+  /session/me:
+    get:
+      operationId: getSessionUser
+      tags: [session]
+      summary: Current session user
+      description: Returns the user object for the currently active session.
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /session/select-user:
+    post:
+      operationId: selectSessionUser
+      tags: [session]
+      summary: Switch demo user
+      description: Sets the active session user (demo only — no auth required).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: integer
+                  example: 2
+      responses:
+        "200":
+          description: Switched user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Geocode ───────────────────────────────────────────────────────────────────
+  /geocode/preview:
+    post:
+      operationId: geocodePreview
+      tags: [geocode]
+      summary: Preview geocode result without persisting
+      description: |
+        Geocodes a structured address and returns the result without persisting
+        anything. Used by the frontend location confirmation step before publishing.
+
+        When `GOOGLE_MAPS_API_KEY` is configured server-side, this calls the real
+        Google Geocoding API. Otherwise it returns deterministic pseudo-coordinates
+        in fallback mode.
+
+        **Status values**:
+        - `ok` — Google matched the address. Check `precision` for confidence level.
+        - `zero_results` — Google ran but found nothing. Do not publish.
+        - `error` — Google key configured but API call failed. Honest degradation.
+        - `fallback` — No Google key. Local/demo mode.
+
+        **Precision values** (only present when `status = ok`):
+        - `rooftop` — exact rooftop-level match (highest confidence)
+        - `interpolated` — street-level interpolated match (high confidence)
+        - `center` — geometric center of area (lower confidence)
+        - `approximate` — approximate match (lower confidence)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [street, city]
+              properties:
+                street:
+                  type: string
+                  description: Street name (English or Hebrew)
+                  example: Rothschild Blvd
+                houseNumber:
+                  type: string
+                  description: House or building number
+                  example: "88"
+                city:
+                  type: string
+                  description: City name (English or Hebrew)
+                  example: Tel Aviv
+      responses:
+        "200":
+          description: Geocode preview result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeocodePreview"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ── Users ────────────────────────────────────────────────────────────────────
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users
+      responses:
+        "200":
+          description: User list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update own profile
+      description: |
+        Updates the profile of the currently active session user.
+        You can only update your own profile; attempting to update another user's
+        profile returns 403.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPatch"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Donations ────────────────────────────────────────────────────────────────
+  /donations:
+    get:
+      operationId: listDonations
+      tags: [donations]
+      summary: List donations (feed)
+      description: |
+        Returns donations with optional filtering, sorting, and proximity ranking.
+        Address and exact coordinates are omitted unless the viewer owns the donation
+        or has an approved/completed pickup request for it (`canSeeAddress = true`).
+        Area coordinates (`areaLatitude`/`areaLongitude`) are always returned and
+        are privacy-safe (~500 m offset from exact in Google mode).
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+          description: Filter by exact city name
+        - name: dietary
+          in: query
+          schema:
+            type: string
+          description: Comma-separated dietary tags (vegan, vegetarian, gluten_free, kosher)
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [available, reserved, picked_up, cancelled, expired, any]
+            default: available
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [newest, expiring, nearest]
+            default: newest
+          description: |
+            - `newest`: creation time descending (default)
+            - `expiring`: expiry date ascending
+            - `nearest`: distance from `lat`/`lng` ascending (requires `lat` + `lng`)
+        - name: lat
+          in: query
+          schema:
+            type: number
+          description: Viewer latitude for proximity sort/filter
+        - name: lng
+          in: query
+          schema:
+            type: number
+          description: Viewer longitude for proximity sort/filter
+        - name: radiusKm
+          in: query
+          schema:
+            type: number
+          description: Limit results to donations within this radius (km). Requires lat + lng.
+      responses:
+        "200":
+          description: Donation list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DonationWithDistance"
+
+    post:
+      operationId: createDonation
+      tags: [donations]
+      summary: Create a donation
+      description: |
+        Creates a donation and immediately geocodes the address server-side.
+        If `GOOGLE_MAPS_API_KEY` is set, the real Google Geocoding API is called.
+
+        **Validation**: If geocoding returns `zero_results` (address not found),
+        the request is rejected with 400. The donor must fix the address first.
+
+        The donation is created in `available` status immediately.
+        `locationConfirmed` defaults to `true` (UI confirmation flow is handled
+        client-side via the 2-step Create flow before the POST is sent).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationCreate"
+      responses:
+        "201":
+          description: Created donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /donations/{id}:
+    get:
+      operationId: getDonation
+      tags: [donations]
+      summary: Get a single donation
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      operationId: updateDonation
+      tags: [donations]
+      summary: Update a donation
+      description: |
+        Donor-only. Accepts partial updates to any field.
+        Status transitions: `available → cancelled | expired`, `reserved → cancelled`,
+        `cancelled | expired → available`. Terminal `picked_up` cannot be changed.
+        If the donation is `reserved` and moved to `cancelled`, all open pickup
+        requests are cancelled automatically.
+
+        **Address changes**: If `city`, `street`, or `houseNumber` change, the backend
+        re-geocodes automatically. If re-geocoding returns `zero_results`, `locationConfirmed`
+        is set to `false`, blocking re-publish until the donor corrects the address.
+
+        **Approved-request guard** (Sprint 5): If an approved pickup request exists on the
+        donation, address field changes are rejected with 409. The donor must cancel the
+        reservation first, then update the address.
+
+        **Publish gate**: Cannot transition to `available` if `locationConfirmed = false`.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationPatch"
+      responses:
+        "200":
+          description: Updated donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteDonation
+      tags: [donations]
+      summary: Delete a donation
+      description: |
+        Donor-only. Cascades to pickup_requests and reviews via FK.
+
+        **Status guards** (Sprint 5): Cannot delete a `reserved` or `picked_up` donation.
+        - `reserved` → 409 "Cancel the reservation first, then delete."
+        - `picked_up` → 409 "Cannot delete a donation that has already been picked up."
+        - `available`, `cancelled`, `expired` → deleted immediately.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /donations/{id}/requests:
+    get:
+      operationId: getDonationRequests
+      tags: [requests]
+      summary: Pickup requests for a donation
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Request list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PickupRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    post:
+      operationId: createPickupRequest
+      tags: [requests]
+      summary: Request pickup for a donation
+      description: |
+        Moves the donation to `reserved` status. Only allowed on `available` donations.
+        Cannot request your own donation.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PickupRequestCreate"
+      responses:
+        "201":
+          description: Created request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PickupRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ── Requests ─────────────────────────────────────────────────────────────────
+  /requests:
+    get:
+      operationId: listRequests
+      tags: [requests]
+      summary: My pickup requests
+      description: Returns all requests where the viewer is either the requester or the donor.
+      responses:
+        "200":
+          description: Request list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PickupRequest"
+
+  /requests/{id}:
+    patch:
+      operationId: updateRequestStatus
+      tags: [requests]
+      summary: Update request status (approve)
+      description: |
+        Donor uses this to approve a pending request.
+        `approved` is the only status that can be set via this endpoint.
+        Use `/requests/{id}/complete` and `/requests/{id}/cancel` for the other transitions.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [approved]
+      responses:
+        "200":
+          description: Updated request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PickupRequest"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /requests/{id}/cancel:
+    post:
+      operationId: cancelRequest
+      tags: [requests]
+      summary: Cancel a pickup request
+      description: |
+        Either the donor or requester can cancel. If this is the last active request
+        for a `reserved` donation, the donation is moved back to `available`.
+        Cannot cancel a `completed` request.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Cancelled request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PickupRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /requests/{id}/complete:
+    post:
+      operationId: completeRequest
+      tags: [requests]
+      summary: Mark pickup as completed
+      description: |
+        Requester-only. Moves request to `completed` and donation to `picked_up`.
+        Only works on `approved` requests.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Completed request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PickupRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /requests/{id}/reviews:
+    post:
+      operationId: createReview
+      tags: [reviews]
+      summary: Submit a review
+      description: |
+        Requester-only. Allowed only on `completed` requests. One review per request
+        (enforced by unique index on `request_id`). Updates the donor's aggregate rating.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewCreate"
+      responses:
+        "201":
+          description: Created review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ── Reviews ──────────────────────────────────────────────────────────────────
+  /reviews:
+    get:
+      operationId: listReviews
+      tags: [reviews]
+      summary: List all reviews
+      description: Returns all reviews, newest first.
+      responses:
+        "200":
+          description: Review list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: Conflict (invalid status transition or duplicate)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+
+    CookcircleHealth:
+      type: object
+      required: [status, db, media, location]
+      properties:
+        status:
+          type: string
+          example: ok
+        db:
+          type: string
+          description: Always "postgres"
+          example: postgres
+        media:
+          type: string
+          enum: [cloudinary, local]
+          description: |
+            `cloudinary` when CLOUDINARY_CLOUD_NAME + CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET are set;
+            `local` uses deterministic picsum placeholder URLs.
+        location:
+          type: string
+          enum: [google, local]
+          description: |
+            `google` when GOOGLE_MAPS_API_KEY is set (server-side only — never exposed to browser);
+            `local` uses a deterministic hash of address+city for pseudo-coordinates (demo/dev mode).
+
+    DietaryTag:
+      type: string
+      enum: [vegan, vegetarian, gluten_free, kosher]
+
+    DonationStatus:
+      type: string
+      enum: [available, reserved, picked_up, cancelled, expired]
+
+    RequestStatus:
+      type: string
+      enum: [pending, approved, cancelled, completed]
+
+    GeocodeStatus:
+      type: string
+      enum: [ok, zero_results, error, fallback]
+      description: |
+        - `ok`: Google matched the address. Check `precision` for confidence level.
+        - `zero_results`: Google ran but found nothing. Cannot publish.
+        - `error`: Google key configured but API call failed. Honest degradation.
+        - `fallback`: No Google key. Local/demo mode.
+
+    GeocodePrecision:
+      type: string
+      nullable: true
+      enum: [rooftop, interpolated, center, approximate]
+      description: |
+        Only present when `geocodeStatus = ok`.
+        - `rooftop`: exact rooftop-level match (highest confidence)
+        - `interpolated`: street-level interpolated match (high confidence)
+        - `center`: geometric center of named area (lower confidence)
+        - `approximate`: approximate match (lower confidence)
+
+    GeocodePreview:
+      type: object
+      required: [status, provider]
+      description: |
+        Result of a geocode preview call. Returned by `POST /geocode/preview`.
+        None of these values are persisted — the preview is for UI display only.
+      properties:
+        areaLat:
+          type: number
+          nullable: true
+          description: |
+            Privacy-safe area latitude (~500 m offset from exact in Google mode).
+            Always returned when geocoding succeeds; null only on catastrophic failure.
+        areaLng:
+          type: number
+          nullable: true
+        exactLat:
+          type: number
+          nullable: true
+          description: |
+            Exact latitude from Google. Null in local/fallback/zero_results/error mode.
+            Never fabricated — if null, it means the exact location is unknown.
+        exactLng:
+          type: number
+          nullable: true
+        areaRadiusMeters:
+          type: integer
+          nullable: true
+          description: 500 in Google mode (verified displacement radius); null in local/fallback.
+        formattedAddress:
+          type: string
+          nullable: true
+          description: Google-normalized address string. Null in local/fallback/zero_results.
+        status:
+          $ref: "#/components/schemas/GeocodeStatus"
+        precision:
+          $ref: "#/components/schemas/GeocodePrecision"
+        provider:
+          type: string
+          enum: [google, local]
+          description: |
+            `google` when Google Geocoding API was called (even if it returned zero_results).
+            `local` when no Google key is set (fallback/demo mode).
+
+    User:
+      type: object
+      required: [id, displayName, email, phone, dietaryPreferences, discreetPickup, rating, reviewCount]
+      properties:
+        id:
+          type: integer
+        displayName:
+          type: string
+          example: Yael Ben-David
+        email:
+          type: string
+          format: email
+          example: yael@example.com
+        phone:
+          type: string
+          example: 050-1234567
+        dietaryPreferences:
+          type: array
+          items:
+            $ref: "#/components/schemas/DietaryTag"
+        discreetPickup:
+          type: boolean
+        rating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 5
+        reviewCount:
+          type: integer
+
+    UserPatch:
+      type: object
+      properties:
+        displayName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        dietaryPreferences:
+          type: array
+          items:
+            $ref: "#/components/schemas/DietaryTag"
+        discreetPickup:
+          type: boolean
+
+    Donation:
+      type: object
+      required: [id, title, description, foodType, quantity, expiryDate, dietaryTags, city, donorId, status, createdAt, allowDiscreet, canSeeAddress]
+      description: |
+        Donation response shape. Fields marked "reveal-gated" are only populated
+        when `canSeeAddress = true` (donor or approved/completed requester).
+        Area coordinates are always returned and are privacy-safe.
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+          maxLength: 200
+          example: Fresh Vegetables
+        description:
+          type: string
+        foodType:
+          type: string
+          maxLength: 80
+          example: Produce
+        quantity:
+          type: string
+          maxLength: 80
+          example: 5 kg
+        expiryDate:
+          type: string
+          description: ISO datetime string (datetime-local format)
+          example: "2026-04-25T18:00"
+        dietaryTags:
+          type: array
+          items:
+            $ref: "#/components/schemas/DietaryTag"
+        city:
+          type: string
+          example: Tel Aviv
+        # Structured address — reveal-gated
+        street:
+          type: string
+          nullable: true
+          description: Street name. Null when canSeeAddress = false.
+        houseNumber:
+          type: string
+          nullable: true
+          description: House/building number. Null when canSeeAddress = false.
+        pickupNotes:
+          type: string
+          nullable: true
+          description: Pickup instructions (private). Null when canSeeAddress = false.
+        # Legacy compat — assembled from street + houseNumber
+        address:
+          type: string
+          nullable: true
+          description: |
+            Legacy flat address string assembled from street + houseNumber.
+            Null when canSeeAddress = false. Deprecated — use street + houseNumber instead.
+        # Geocoding results — reveal-gated
+        formattedAddress:
+          type: string
+          nullable: true
+          description: Google-normalized address. Null when canSeeAddress = false or fallback mode.
+        geocodeStatus:
+          $ref: "#/components/schemas/GeocodeStatus"
+          nullable: true
+          description: Null when canSeeAddress = false.
+        geocodePrecision:
+          $ref: "#/components/schemas/GeocodePrecision"
+          nullable: true
+          description: Null when canSeeAddress = false.
+        geocodeProvider:
+          type: string
+          nullable: true
+          enum: [google, local]
+          description: Null when canSeeAddress = false.
+        locationConfirmed:
+          type: boolean
+          nullable: true
+          description: Whether the donor has confirmed the pickup location. Null when canSeeAddress = false.
+        # Exact coords — reveal-gated, null in fallback/local mode
+        latitude:
+          type: number
+          nullable: true
+          description: Exact latitude. Null when canSeeAddress = false or in fallback mode (never fabricated).
+        longitude:
+          type: number
+          nullable: true
+          description: Exact longitude. Null when canSeeAddress = false or in fallback mode.
+        # Area coords — always returned, privacy-safe
+        areaLatitude:
+          type: number
+          nullable: true
+          description: Privacy-safe area latitude (~500 m offset in Google mode). Always returned.
+        areaLongitude:
+          type: number
+          nullable: true
+          description: Privacy-safe area longitude. Always returned.
+        areaLabel:
+          type: string
+          nullable: true
+          description: City-level label for area map display.
+        areaRadiusMeters:
+          type: integer
+          nullable: true
+          description: 500 in Google mode; null in local/fallback (unverified area).
+        imageUrl:
+          type: string
+          nullable: true
+        imagePublicId:
+          type: string
+          nullable: true
+        donorId:
+          type: integer
+        status:
+          $ref: "#/components/schemas/DonationStatus"
+        createdAt:
+          type: string
+          format: date-time
+        allowDiscreet:
+          type: boolean
+          description: Whether discreet pickup requests are accepted.
+        canSeeAddress:
+          type: boolean
+          description: |
+            True if the current viewer may see the full address and exact coordinates.
+            Viewer is the donor OR has an approved/completed pickup request.
+
+    DonationWithDistance:
+      allOf:
+        - $ref: "#/components/schemas/Donation"
+        - type: object
+          properties:
+            distanceKm:
+              type: number
+              nullable: true
+              description: Distance from the viewer's origin (km). null when no origin was provided.
+
+    DonationCreate:
+      type: object
+      required: [title, description, foodType, quantity, expiryDate, city, street]
+      description: |
+        Structured address fields (Sprint 1+). The `street` field is required.
+        The backend geocodes the address server-side after creation.
+        If geocoding returns `zero_results`, the request is rejected with 400.
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        foodType:
+          type: string
+          maxLength: 80
+        quantity:
+          type: string
+          maxLength: 80
+        expiryDate:
+          type: string
+        dietaryTags:
+          type: array
+          items:
+            $ref: "#/components/schemas/DietaryTag"
+          default: []
+        city:
+          type: string
+          example: Tel Aviv
+        street:
+          type: string
+          description: Street name (English or Hebrew)
+          example: Rothschild Blvd
+        houseNumber:
+          type: string
+          description: House/building number
+          example: "88"
+        pickupNotes:
+          type: string
+          description: Private pickup instructions shown only to approved recipients
+        allowDiscreet:
+          type: boolean
+          default: false
+        image:
+          type: object
+          properties:
+            data:
+              type: string
+              description: Base64 data URL of the image (data:image/jpeg;base64,...)
+
+    DonationPatch:
+      type: object
+      description: |
+        All fields are optional; only provided fields are updated.
+        Changing `city`, `street`, or `houseNumber` triggers a server-side re-geocode.
+        If re-geocoding returns `zero_results`, `locationConfirmed` is set to `false`.
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        foodType:
+          type: string
+        quantity:
+          type: string
+        expiryDate:
+          type: string
+        dietaryTags:
+          type: array
+          items:
+            $ref: "#/components/schemas/DietaryTag"
+        city:
+          type: string
+        street:
+          type: string
+          description: Street name (English or Hebrew). Triggers re-geocode if changed.
+        houseNumber:
+          type: string
+          description: House/building number. Triggers re-geocode if changed.
+        pickupNotes:
+          type: string
+        allowDiscreet:
+          type: boolean
+        status:
+          $ref: "#/components/schemas/DonationStatus"
+        image:
+          type: object
+          properties:
+            data:
+              type: string
+
+    PickupRequest:
+      type: object
+      required: [id, donationId, requesterId, pickupTime, notes, discreetPickup, status, createdAt]
+      properties:
+        id:
+          type: integer
+        donationId:
+          type: integer
+        requesterId:
+          type: integer
+        pickupTime:
+          type: string
+          description: ISO datetime string for the proposed pickup time
+          example: "2026-04-26T14:00"
+        notes:
+          type: string
+        discreetPickup:
+          type: boolean
+        status:
+          $ref: "#/components/schemas/RequestStatus"
+        createdAt:
+          type: string
+          format: date-time
+
+    PickupRequestCreate:
+      type: object
+      required: [pickupTime]
+      properties:
+        pickupTime:
+          type: string
+          example: "2026-04-26T14:00"
+        notes:
+          type: string
+          default: ""
+        discreetPickup:
+          type: boolean
+          default: false
+
+    Review:
+      type: object
+      required: [id, donationId, requestId, reviewerId, revieweeId, rating, comment, createdAt]
+      properties:
+        id:
+          type: integer
+        donationId:
+          type: integer
+        requestId:
+          type: integer
+        reviewerId:
+          type: integer
+        revieweeId:
+          type: integer
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ReviewCreate:
+      type: object
+      required: [rating]
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          default: ""

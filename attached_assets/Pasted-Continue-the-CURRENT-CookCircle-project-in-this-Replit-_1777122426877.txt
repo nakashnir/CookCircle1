@@ -1,0 +1,210 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Do NOT restart the product.
+Do NOT redesign the product scope.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+APPROVED SCOPE ONLY
+Keep the project strictly within the approved CookCircle scope:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+- broad architectural rewrites unless absolutely necessary
+
+CURRENT GOAL
+Execute one focused POWER MODE completion sprint that closes the remaining high-priority gaps across:
+- location / distance correctness
+- integration verification + documentation
+- OpenAPI / technical docs accuracy
+- responsive + accessibility quality
+- final UX polish for My Requests / Create Donation / Profile
+
+This is NOT a new feature sprint.
+This is NOT a redesign-from-zero sprint.
+This is a final quality + correctness + readiness sprint.
+
+IMPORTANT
+The app already works.
+Preserve all current backend, DB, session, privacy, and core product flows.
+Prefer targeted upgrades over rewrites.
+
+EXECUTE IN THESE PHASES
+
+PHASE 1 — FIX LOCATION / DISTANCE CORRECTNESS
+This is a top-priority issue.
+
+Problem:
+Current distance/location behavior can look obviously wrong in the UI and harms trust in the product.
+
+Requirements:
+1. inspect the current location pipeline end-to-end:
+   - stored lat/lng values
+   - seed data
+   - geocoding adapter
+   - fallback location behavior
+   - distance calculation logic in backend/frontend
+2. fix the system so distance/location output does not look wrong or misleading
+3. if the environment does not have real location credentials, implement the best safe fallback behavior for demo purposes
+4. for demo/fallback mode, prefer believable local/regional coordinates and distances over unrealistic values
+5. if exact real distance cannot be guaranteed, present it in a safe way that does not damage trust
+6. keep privacy rules intact:
+   - no full address before approval
+   - general location only before approval
+   - full pickup details only after approval/completion
+
+PHASE 2 — VERIFY AND DOCUMENT REAL VS FALLBACK INTEGRATIONS
+I need exact truth, not assumptions.
+
+Inspect and verify the CURRENT runtime status of:
+1. Cloudinary
+2. location provider / map provider
+
+Requirements:
+- determine whether Cloudinary is truly active with real credentials or currently fallback
+- determine whether a real location provider is truly active with real credentials or currently fallback
+- identify the exact code paths used in the current runtime
+- keep names of env vars only, never output secret values
+- make the app behavior and docs accurately reflect reality
+- if needed, make small UI or docs changes so the app does not imply real integrations when it is actually running fallback behavior
+
+PHASE 3 — UPDATE OPENAPI / TECHNICAL DOCS
+Current technical docs must match the real system.
+
+Requirements:
+1. update OpenAPI / technical API documentation so it reflects the real current backend, not only health endpoints
+2. document the real endpoints and main request/response shapes for:
+   - donations
+   - pickup requests
+   - reviews
+   - session / current user
+   - health
+3. keep the spec practical and accurate
+4. update any README / technical docs that are stale, incomplete, or misleading
+5. clearly document:
+   - real architecture
+   - database approach
+   - seed/reset instructions
+   - env requirements
+   - what is real integration vs fallback
+   - any intentional technical deviation from the original plan
+
+PHASE 4 — RESPONSIVE + ACCESSIBILITY PASS
+Do a real quality pass, not just cosmetic tweaks.
+
+Responsive requirements:
+1. inspect desktop, tablet, and mobile layouts
+2. improve layout behavior where it currently breaks, feels cramped, or becomes too flat
+3. make sure Home, My Donations, My Requests, Profile, and Create Donation all behave clearly on smaller screens
+4. preserve usability and visual hierarchy
+
+Accessibility requirements:
+1. improve semantic structure where reasonable
+2. improve button and input clarity
+3. improve focus states if weak or missing
+4. improve contrast if needed
+5. improve empty/error/loading state clarity where needed
+6. do not overengineer, but make the product safer and more usable
+
+PHASE 5 — FINAL UX POLISH ON THE WEAKEST SCREENS
+Focus only on these screens now:
+- My Requests
+- Create Donation
+- Profile
+
+My Requests:
+- make the layout cleaner and easier to scan
+- improve hierarchy between status, pickup info, location, notes, and actions
+- reduce flat management-board feeling
+- make approved / pending / completed states feel clearer and more polished
+- preserve all request-state logic
+
+Create Donation:
+- improve form hierarchy and readability
+- improve spacing and section rhythm
+- improve upload area polish
+- improve privacy options presentation
+- make the page feel more like a real product form and less like a plain admin form
+
+Profile:
+- improve account/settings feeling
+- improve summary card usefulness
+- improve form section hierarchy
+- improve spacing and visual balance
+- make the page feel more intentional and complete
+
+PHASE 6 — NO-REGRESSION QA PASS
+After all changes, verify that all current flows still work:
+- create donation
+- edit donation
+- delete donation
+- donor lifecycle actions
+- request pickup
+- donor approve / decline
+- recipient complete pickup
+- review after completed request
+- session user switching
+- privacy gating
+- image handling
+- location preview
+- filters / sorting / discovery
+
+Fix any real regressions with the smallest safe change set.
+
+MANDATORY SUCCESS CRITERIA
+This sprint is only complete if ALL of the following are true:
+
+1. The app still runs correctly in Replit
+2. No approved core flow is broken
+3. Location/distance behavior no longer looks obviously wrong or misleading
+4. Cloudinary status is clearly verified as real or fallback
+5. Location provider status is clearly verified as real or fallback
+6. OpenAPI / technical docs are updated to reflect the real current system
+7. Desktop and mobile behavior are improved
+8. My Requests, Create Donation, and Profile visibly improve
+9. Existing backend/API/session/privacy behavior is preserved
+10. Final docs accurately reflect reality
+
+RULES
+- keep changes within the current codebase
+- prefer targeted fixes over rewrites
+- no scope creep
+- no feature expansion
+- no long essay
+- no product brainstorming
+- execution only
+- make the biggest practical progress possible in one sprint
+
+OUTPUT FORMAT
+When done, return exactly:
+1. root problems found
+2. files created or changed
+3. what was fixed in each phase
+4. whether the app is running
+5. preview / webview path
+6. exact current integration status:
+   - Cloudinary real or fallback
+   - location provider real or fallback
+7. what changed in OpenAPI / technical docs
+8. what changed in responsive / accessibility behavior
+9. any regressions fixed
+10. any real remaining gaps

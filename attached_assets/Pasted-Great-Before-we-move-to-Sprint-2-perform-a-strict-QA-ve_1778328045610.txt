@@ -1,0 +1,65 @@
+Great. Before we move to Sprint 2, perform a strict QA verification pass for Sprint 1 Auth.
+
+Do not add new features.
+Do not rewrite image/location.
+Do not change UI except if fixing a clear auth bug.
+Do not start Sprint 2 yet.
+
+Run and report the following verification checks:
+
+1. Confirm there is no automatic fallback/default user 1 behavior:
+   - Fresh browser/session with no cookie
+   - GET /api/auth/me returns 401
+   - No user-specific mutation works without login
+
+2. Confirm no passwordHash is ever returned:
+   - POST /api/auth/login response
+   - POST /api/auth/register response
+   - GET /api/auth/me response
+   - GET /api/users response if public
+   - Any user object included in donation/request/review responses
+
+3. Test unauthenticated mutation blocking:
+   - POST /api/donations
+   - PATCH /api/donations/:id
+   - DELETE /api/donations/:id
+   - POST /api/donations/:id/requests or current request route
+   - approve/decline/cancel/complete request routes
+   - POST /api/reviews
+   - image upload route if separate
+
+4. Test authenticated E2E:
+   - Login as donor demo user
+   - Create donation with image + confirmed location
+   - Refresh page and confirm image still appears
+   - Logout
+   - Login as requester demo user
+   - View donation
+   - Send pickup request
+   - Logout
+   - Login as donor
+   - Approve request
+   - Logout
+   - Login as requester
+   - Confirm privacy/location behavior is still correct
+   - Complete pickup if current app flow allows
+   - Submit review
+   - Refresh and verify persisted data
+
+5. Verify DB/seed reproducibility:
+   - Confirm passwordHash column exists in schema/migration
+   - Confirm seed users receive password hashes
+   - Confirm fresh setup does not require manual DB patching outside the committed code/migrations
+
+6. Verify build/deploy readiness:
+   - Run frontend typecheck/build
+   - Run backend typecheck/build
+   - Confirm no references remain to select-user/demo switcher APIs except maybe in archived docs/tests
+   - Confirm README/DEMO_GUIDE includes demo login credentials
+
+Return:
+- PASS/FAIL for each item
+- Commands run
+- API responses summary
+- Any changed files if fixes were needed
+- Final verdict: SPRINT_1_AUTH_VERIFIED or NEEDS_FIX

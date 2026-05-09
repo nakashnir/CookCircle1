@@ -1,0 +1,273 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Sprint 1 is complete:
+- DB/schema foundation exists
+- exact + area location model exists
+- location_confirmed exists
+- backend privacy shaping exists
+- area derivation exists
+- hide_address is removed from the privacy model
+- compatibility aliases exist temporarily
+
+Sprint 2 is complete:
+- structured address UI exists in Create/Edit
+- location confirmation flow exists
+- city suggestions exist
+- Street has Google Places path when browser key exists
+- fallback UI path exists when browser key is missing
+
+Sprint 3 is complete:
+- real backend geocoding path is hardened
+- geocode status/precision handling exists
+- zero_results are blocked server-side
+- confirmation flow reflects real backend geocode states
+- OpenAPI/types were updated
+
+Sprint 4 is complete:
+- Donation Details has viewer-aware location behavior
+- area map vs exact map behavior exists
+- My Requests / My Donations location consistency improved
+- privacy-aware location UX is in place
+
+Do NOT redo Sprint 1/2/3/4.
+Do NOT redesign the product.
+Do NOT change the approved product scope.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+This is SPRINT 5 — QA HARDENING + EDGE CASES + PRIVACY / SECURITY VERIFICATION.
+
+APPROVED SCOPE ONLY
+Keep everything strictly within:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+SPRINT 5 GOAL
+Prove that the current CookCircle system is robust, privacy-safe, and regression-safe by executing a deep QA / edge-case / trust verification sprint.
+
+IMPORTANT
+This sprint is NOT about building major new product features.
+This sprint is about:
+- edge cases
+- privacy leaks
+- security/trust correctness
+- regressions
+- lifecycle correctness
+- address/location correctness
+- technical cleanup only where needed to fix real issues
+
+If you find real bugs, fix them with the smallest safe change set.
+Do NOT do broad redesigns.
+
+EXECUTE IN THESE PHASES
+
+PHASE 1 — BUILD A REAL QA MATRIX
+Create and execute a structured QA matrix covering the current system.
+
+The QA matrix must include at least these groups:
+1. session / user switching
+2. donation lifecycle
+3. pickup request lifecycle
+4. privacy / address / map behavior
+5. geocoding / address input
+6. reviews
+7. feed / filtering / sorting
+8. profile/settings
+9. responsive behavior
+10. deployment/runtime/docs sanity
+
+For each failed case, fix only the real issue with the smallest safe change set.
+
+PHASE 2 — PRIVACY / SECURITY VERIFICATION
+This is critical.
+
+You must verify that exact location and sensitive pickup data do NOT leak incorrectly.
+
+Test and confirm:
+1. public viewer never receives exact address when not allowed
+2. public viewer never receives exact coordinates when not allowed
+3. pending requester never receives exact address/coords before approval
+4. approved requester receives exact location only when truly allowed
+5. donor receives exact location only for own listing
+6. pickup notes are only exposed to allowed viewers
+7. no privacy leak occurs via:
+   - Donation Details
+   - My Requests
+   - My Donations
+   - API payloads
+   - compatibility aliases
+   - hidden fields
+   - direct endpoint access
+
+Inspect the real runtime/API responses, not only the UI.
+
+PHASE 3 — ADDRESS EDIT AFTER APPROVAL EDGE CASE
+This was intentionally deferred earlier.
+Now it must be tested explicitly.
+
+You must test and evaluate:
+1. donor edits address after a requester is already approved
+2. donor edits address after request is pending
+3. donor edits address after request is completed
+4. whether current system behavior is acceptable
+5. whether it causes privacy, trust, or coordination issues
+
+If current behavior is unsafe or confusing, implement the smallest safe fix or guard.
+Be precise and conservative.
+Do NOT overengineer.
+
+PHASE 4 — LOCATION / GEOCODING EDGE CASES
+Test the location pipeline deeply.
+
+Include:
+1. Hebrew address input
+2. English address input
+3. mixed-language Israeli address input
+4. street without number
+5. ambiguous address
+6. zero_results
+7. provider failure
+8. fallback mode
+9. approximate geocode precision
+10. edit address and reconfirm flow
+11. create donation with location not verified
+12. exact map vs area map behavior
+
+Verify that the system remains honest and trust-preserving in all cases.
+
+PHASE 5 — LIFECYCLE EDGE CASES
+Test the hardest lifecycle cases.
+
+Include at least:
+1. request sent to available donation
+2. duplicate request attempts
+3. donor approve twice
+4. donor decline after approval
+5. requester complete without approval
+6. review before completed
+7. duplicate review
+8. cancel/reopen flows
+9. delete listing on reserved/picked-up/cancelled cases
+10. state transitions after address edits
+11. fallback + publish + request + approval chain
+
+Fix any real lifecycle bug with the smallest safe change set.
+
+PHASE 6 — API / COMPATIBILITY / LEAK CHECK
+Audit the API shape carefully.
+
+Requirements:
+1. identify which compatibility aliases still exist
+2. verify they do not leak exact location/privacy data incorrectly
+3. verify they are still actually needed
+4. reduce or remove any alias that is no longer needed and is safe to remove now
+5. if an alias must remain, document exactly why
+
+Examples of things to inspect:
+- address
+- latitude
+- longitude
+- areaLatitude
+- areaLongitude
+- any older location fields still mirrored for compatibility
+
+PHASE 7 — RESPONSIVE + ACCESSIBILITY QA
+Do a real QA pass, not just a visual glance.
+
+Responsive:
+1. inspect Home, My Donations, My Requests, Profile, Create Donation, Donation Details on smaller widths
+2. verify layouts do not break
+3. verify action areas remain usable
+4. verify form confirmation flow remains clear on mobile/tablet
+
+Accessibility:
+1. verify labels/inputs still associate correctly
+2. verify tab and keyboard usability
+3. verify location confirmation step is keyboard-usable
+4. verify action buttons have sensible names and states
+5. fix any real regressions found
+
+PHASE 8 — DEPLOYMENT / RUNTIME / DOCS SANITY
+Verify that runtime and docs still match reality.
+
+Requirements:
+1. verify app still runs
+2. verify health endpoints still work
+3. verify docs/OpenAPI are still accurate after all Sprint 5 fixes
+4. verify integration status is still documented honestly:
+   - Cloudinary real or fallback
+   - location provider real or fallback
+5. update docs only where needed to reflect reality
+
+PHASE 9 — FINAL BUG FIX PASS
+After the QA matrix and edge-case pass, fix any real issues you found.
+Only fix:
+- real bugs
+- real privacy issues
+- real regressions
+- real trust issues
+Do NOT start unrelated improvement work.
+
+MANDATORY NOTES TO HONOR
+1. Do NOT weaken backend privacy rules.
+2. Do NOT reintroduce hide_address behavior.
+3. Do NOT fake real Google behavior if keys are absent.
+4. Do NOT keep misleading exact map/location behavior in fallback mode.
+5. Prefer minimal safe fixes over large refactors.
+6. If address-edit-after-approval is still risky and cannot be fully solved safely in this sprint, implement the safest minimal guard and document the remaining limitation clearly.
+
+SPRINT 5 ACCEPTANCE CRITERIA
+This sprint is complete only if ALL are true:
+1. QA matrix was actually executed across the core flows
+2. no exact location leak exists for public or pending viewers
+3. address edit after approval has been explicitly tested and handled/documented
+4. geocoding/location edge cases behave honestly
+5. lifecycle edge cases are stable and safe
+6. compatibility aliases are audited and either reduced or clearly justified
+7. responsive and accessibility regressions are fixed
+8. current product flows still work without major regression
+9. docs/runtime behavior remain aligned
+10. the product is ready for final polish / packaging after this sprint
+
+RULES
+- no broad redesign
+- no new feature expansion
+- no reopening old closed architecture decisions
+- no vague theory
+- no long essay
+- execution only
+- fix only what the QA/edge-case pass proves is real
+
+OUTPUT FORMAT
+When done, return exactly:
+1. QA matrix executed
+2. root bugs / edge-case issues found
+3. files created or changed
+4. privacy/security issues fixed
+5. address/location issues fixed
+6. lifecycle issues fixed
+7. compatibility cleanup done
+8. responsive/accessibility fixes made
+9. whether the app is still running
+10. any remaining blockers or known limitations
+11. what remains for Sprint 6 / final packaging

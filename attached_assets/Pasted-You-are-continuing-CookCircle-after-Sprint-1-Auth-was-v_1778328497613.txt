@@ -1,0 +1,158 @@
+You are continuing CookCircle after Sprint 1 Auth was verified.
+
+SPRINT 2 GOAL:
+Public Deployment + Submission E2E Proof.
+
+Important:
+Sprint 1 Auth is verified. Do not rewrite auth.
+Image and location passed authenticated E2E. Do not rewrite image/location unless a deployment-specific bug is found.
+Do not add new product features.
+Do not add chat, AI, admin dashboard, payments, notifications, or cooking partner features.
+
+The goal of this sprint is to make the current system submission-ready by proving that the deployed/public version works end-to-end.
+
+====================================================
+SPRINT 2 SCOPE
+====================================================
+
+1. Ensure the production/public deployment serves the latest source code.
+2. Ensure fresh build artifacts are generated from current code, not stale _static assets.
+3. Ensure environment variables/secrets are correctly available in deployment runtime.
+4. Verify auth + image + location + donation/request/review flow on the public URL.
+5. Produce a clean demo script and deployment verification report for academic submission.
+
+====================================================
+STRICT RULES
+====================================================
+
+Do not start new features.
+Do not redesign UI.
+Do not change business logic unless a deployment blocker is found.
+Do not expose secrets.
+Do not paste API keys.
+Do not break the verified Sprint 1 auth flow.
+Do not break image/location flows.
+
+====================================================
+TASKS
+====================================================
+
+1. Build verification
+Run the relevant build/typecheck commands:
+- backend typecheck/build if available
+- frontend typecheck/build
+- full app build if configured
+- confirm the generated production assets are fresh
+
+Check whether the app is serving stale files from _static or fresh build output.
+If stale build assets are used, fix the deployment/build configuration so the public app serves the latest code.
+
+2. Deployment configuration check
+Inspect deployment/runtime configuration:
+- server start command
+- publicDir/static serving path
+- frontend build output path
+- backend API routing
+- Replit deployment config if present
+- environment variables required
+
+Confirm these are documented:
+- DATABASE_URL
+- SESSION_SECRET
+- Google Maps browser key
+- Google server/geocoding key if used
+- Cloudinary variables if used
+- any production URL/base URL settings
+
+Do not expose actual secret values.
+
+3. Runtime health check
+On the public/deployed runtime, verify:
+- GET /api/health
+- GET /api/auth/me without cookie returns 401
+- login works with demo credentials
+- logout works
+- app loads without console-breaking errors
+
+Report whether:
+- database is connected
+- media provider is cloudinary or local fallback
+- location provider is google or local fallback
+
+4. Public URL E2E test
+Using the actual public/deployed URL, perform the full demo flow:
+
+A. Donor flow:
+- Login as donor demo user
+- Create a donation
+- Add image
+- Confirm location
+- Publish donation
+- Refresh browser
+- Confirm image still appears
+- Confirm donation appears in My Donations
+
+B. Requester flow:
+- Logout donor
+- Login as requester demo user
+- View the donation
+- Confirm requester does NOT see exact address before approval
+- Send pickup request
+
+C. Donor approval:
+- Logout requester
+- Login as donor
+- Approve the request
+
+D. Requester after approval:
+- Logout donor
+- Login as requester
+- Confirm requester can now see exact pickup address/location where applicable
+- Complete pickup if current flow allows
+
+E. Review:
+- Submit review
+- Refresh page
+- Confirm review persists
+
+5. Privacy verification
+Verify on deployed/public URL:
+- Unauthenticated/public user cannot create/update/delete anything
+- Pending requester sees only general area
+- Approved requester sees exact address
+- Donor sees exact address
+- passwordHash is never returned in API responses
+
+6. Submission demo assets
+Create/update a short DEMO_GUIDE section with:
+- Public URL placeholder or actual URL if known
+- Demo credentials
+- Recommended 3–5 minute functional demo flow
+- Technical demo points:
+  - React/Vite frontend
+  - Express backend
+  - PostgreSQL/Drizzle DB
+  - Auth/session
+  - Image handling
+  - Location/geocoding/privacy logic
+  - Request/review lifecycle
+
+7. Final report
+Return a clean Sprint 2 report:
+
+- Public URL tested:
+- Build commands run:
+- Typecheck/build results:
+- Health endpoint result:
+- Auth result:
+- Image result:
+- Location result:
+- Full E2E result:
+- Privacy result:
+- Files changed:
+- Remaining blockers:
+- Final verdict:
+
+Final verdict must be one of:
+- SPRINT_2_DEPLOYMENT_VERIFIED
+- NEEDS_FIX

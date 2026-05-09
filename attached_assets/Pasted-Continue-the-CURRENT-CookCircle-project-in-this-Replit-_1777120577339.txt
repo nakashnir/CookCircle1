@@ -1,0 +1,237 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The current project in Replit is the source of truth.
+
+Do NOT restart the product.
+Do NOT redesign the product scope.
+Do NOT add out-of-scope features.
+Do NOT change the approved MVP flows.
+
+APPROVED SCOPE ONLY
+Keep the project strictly within the approved CookCircle workshop scope:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- notifications system expansion
+- any new product direction
+- any broad architectural rewrite that is not necessary
+
+CURRENT GOAL
+Execute one final broad POWER MODE sprint that closes the remaining gaps across:
+- visual refinement
+- UX polish
+- responsive behavior
+- consistency
+- integration verification
+- regression hardening
+- delivery readiness
+
+This is NOT a feature-expansion sprint.
+This is NOT a backend rebuild sprint.
+This is a final completion sprint to move the product from “strong MVP” to “submission-ready and product-grade”.
+
+IMPORTANT
+The app already works.
+Do not break existing flows.
+Prefer upgrading and refining the current implementation over rewriting everything.
+
+DESIGN DIRECTION
+CookCircle should feel:
+- warm
+- modern
+- community-centered
+- trustworthy
+- food-oriented
+- sustainable
+- polished
+- soft premium
+- more like a real startup product, less like an academic prototype
+
+It should NOT feel like:
+- a generic dashboard
+- a plain CRUD app
+- a random template with green colors
+- a collection of screens that are only technically correct
+
+MAIN GAPS TO CLOSE
+1. The UI is much better now, but still needs a full refinement pass.
+2. Some screens still feel more functional than polished.
+3. My Requests still feels too management-like and not elegant enough.
+4. My Donations needs stronger action hierarchy and tighter visual grouping.
+5. Feed cards still need more mature information hierarchy and stronger media treatment.
+6. Forms still feel a bit plain in places.
+7. The illustration / image strategy must feel intentional and food-relevant, not placeholder-like.
+8. Mobile / responsive behavior must be improved where needed.
+9. Need final verification of what integrations are truly active vs fallback.
+10. Need a final no-regression QA pass and accurate handoff/submission docs.
+
+EXECUTE THIS SPRINT IN PHASES
+
+PHASE 1 — VISUAL SYSTEM REFINEMENT
+Upgrade the existing design system across the app:
+- strengthen typography hierarchy
+- improve spacing rhythm and density
+- improve button hierarchy
+- improve badges, chips, tags, alerts, and status treatment
+- improve card composition and depth
+- refine border radius, shadow language, and surface hierarchy
+- make the whole app feel less generic and more product-grade
+- reduce leftover “dashboard” feeling
+
+PHASE 2 — FEED / HOME REFINEMENT
+Improve the donation feed and discovery experience:
+- keep the current structure and filters
+- refine the hero area so it feels more premium
+- refine the search/filter bar
+- refine the donation cards:
+  - stronger title/meta hierarchy
+  - cleaner donor presentation
+  - better location/distance/expiry presentation
+  - more refined dietary tags
+  - stronger CTA treatment
+- make sure imagery is food-relevant and visually intentional
+- avoid random or visually harmful placeholders
+- if needed, use a more consistent illustration/placeholder treatment
+
+PHASE 3 — MY DONATIONS REFINEMENT
+Upgrade My Donations so it feels like a polished donor management experience:
+- improve the hierarchy between donation info, request info, and actions
+- improve the visual grouping of incoming requests
+- make primary actions more prominent
+- make destructive actions less dominant but still clear
+- reduce the “stack of buttons” feeling
+- improve readability and scanability
+
+PHASE 4 — MY REQUESTS REFINEMENT
+Upgrade My Requests significantly:
+- make the layout cleaner and easier to scan
+- improve grouping between donation info, pickup info, status, and actions
+- improve the visual balance of status + actions
+- reduce the overly flat management-board feeling
+- make approved / pending / completed states feel more intentional and polished
+- preserve all current request-state behavior
+
+PHASE 5 — CREATE DONATION + DETAILS REFINEMENT
+Improve the high-value product screens:
+- Create Donation should feel like a high-quality product form
+- improve section rhythm and layout
+- improve field styling and visual hierarchy
+- improve upload area styling
+- improve privacy settings presentation
+- improve details page:
+  - stronger media / hero block
+  - cleaner donor section
+  - cleaner request panel
+  - cleaner location/map preview area
+  - better CTA hierarchy
+
+PHASE 6 — PROFILE REFINEMENT
+Upgrade Profile so it feels like a polished account/settings experience:
+- improve top summary area
+- improve stats presentation
+- improve form sections
+- improve settings controls
+- improve layout balance and section hierarchy
+- make the page feel more complete and intentional
+
+PHASE 7 — RESPONSIVE / MOBILE PASS
+Do a practical responsive pass:
+- improve desktop/tablet/mobile behavior where needed
+- ensure cards, forms, and layouts scale gracefully
+- preserve usability on smaller screens
+- do not overengineer mobile; just make it clearly better and more robust
+
+PHASE 8 — INTEGRATION VERIFICATION
+Inspect and verify the CURRENT real integration status:
+1. Cloudinary:
+   - confirm whether real Cloudinary credentials are active
+   - if active, confirm the real path is being used
+   - if not active, confirm fallback path is being used
+2. Location provider:
+   - confirm whether a real provider is active
+   - if active, specify which one
+   - if not active, confirm fallback behavior
+3. preserve current behavior
+4. do not break anything
+5. if minor UI adjustments are needed to better reflect real/fallback integration behavior, do them
+
+PHASE 9 — REGRESSION / QA HARDENING
+Do a full no-regression pass.
+All of these must still work:
+- create donation
+- edit donation
+- delete donation
+- request pickup
+- donor approve / decline
+- donor lifecycle actions
+- recipient complete pickup
+- review after completed request
+- session user switching
+- persistence after refresh
+- privacy gating
+- image handling
+- location preview
+- filters / sorting / discovery behavior
+
+Fix any real regressions you find with the smallest safe change set.
+
+PHASE 10 — DELIVERY / HANDOFF READINESS
+Make the project easier to present and submit:
+- ensure README is accurate and reflects the real current implementation
+- ensure .env.example is accurate
+- clearly state what integrations are active vs fallback
+- clearly document run commands
+- clearly document seed/reset steps
+- clearly document any real remaining gaps
+- if there is a technical deviation from the original proposed stack, document it clearly and honestly
+
+MANDATORY SUCCESS CRITERIA
+This sprint is only complete if ALL of the following are true:
+1. The app still runs correctly in Replit
+2. No approved core flow is broken
+3. The app looks significantly less generic and more refined
+4. The major screens visibly share one stronger visual language
+5. Feed imagery/media treatment feels intentional and food-relevant
+6. Home, My Donations, My Requests, Profile, Create Donation, and Donation Details all receive visible upgrades
+7. Desktop and mobile behavior are both improved
+8. Existing backend/API/session/privacy behavior is preserved
+9. Final docs accurately reflect the real current implementation
+
+RULES
+- keep changes within the current codebase
+- prefer upgrading current components over unnecessary rewrites
+- no scope creep
+- no broad backend redesign
+- no long essay
+- no product brainstorm
+- execution only
+- make the biggest practical progress possible in one sprint
+
+OUTPUT FORMAT
+When done, return exactly:
+1. visual / UX problems found
+2. files created or changed
+3. what was improved in each major screen
+4. whether the app is running
+5. preview / webview path
+6. exact current integration status:
+   - Cloudinary real or fallback
+   - location provider real or fallback
+7. any regressions fixed
+8. any real remaining gaps

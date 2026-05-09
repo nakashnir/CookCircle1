@@ -1,0 +1,181 @@
+{
+  "donations": [
+    {
+      "id": 1,
+      "title": "Fresh Vegetables",
+      "description": "Mixed fresh vegetables including tomatoes, cucumbers, lettuce, and carrots. All organic and locally grown.",
+      "foodType": "Produce",
+      "quantity": "5 kg",
+      "expiryDate": "2026-04-22T18:00",
+      "dietaryTags": [
+        "vegan"
+      ],
+      "city": "Downtown",
+      "address": "123 Main Street",
+      "donorId": 2,
+      "status": "reserved",
+      "createdAt": "2026-04-18T10:00",
+      "hideAddress": true
+    },
+    {
+      "id": 2,
+      "title": "Homemade Pasta",
+      "description": "Fresh homemade pasta with tomato sauce. Made this morning, perfect for a quick meal.",
+      "foodType": "Prepared Food",
+      "quantity": "10 portions",
+      "expiryDate": "2026-04-20T20:00",
+      "dietaryTags": [
+        "vegetarian"
+      ],
+      "city": "West End",
+      "address": "456 Oak Avenue",
+      "donorId": 3,
+      "status": "available",
+      "createdAt": "2026-04-18T09:00",
+      "allowDiscreet": true
+    },
+    {
+      "id": 3,
+      "title": "Bread & Pastries",
+      "description": "Assorted bread and pastries from my bakery. All baked fresh this morning.",
+      "foodType": "Baked Goods",
+      "quantity": "20 items",
+      "expiryDate": "2026-04-19T22:00",
+      "dietaryTags": [
+        "vegetarian"
+      ],
+      "city": "City Center",
+      "address": "789 Bakery Lane",
+      "donorId": 4,
+      "status": "picked_up",
+      "createdAt": "2026-04-18T08:00"
+    },
+    {
+      "id": 4,
+      "title": "Canned Goods",
+      "description": "Various canned vegetables and beans. Non-perishable, great for stocking up.",
+      "foodType": "Non-Perishable",
+      "quantity": "15 cans",
+      "expiryDate": "2027-04-18T23:59",
+      "dietaryTags": [
+        "vegan",
+        "gluten_free"
+      ],
+      "city": "East Side",
+      "address": "321 Elm Street",
+      "donorId": 5,
+      "status": "available",
+      "createdAt": "2026-04-17T15:00"
+    },
+    {
+      "id": 5,
+      "title": "Fresh Fruit",
+      "description": "Apples, bananas, and oranges. Slightly overripe but perfect for smoothies or baking.",
+      "foodType": "Produce",
+      "quantity": "3 kg",
+      "expiryDate": "2026-04-21T18:00",
+      "dietaryTags": [
+        "vegan"
+      ],
+      "city": "North District",
+      "address": "555 Apple Road",
+      "donorId": 2,
+      "status": "available",
+      "createdAt": "2026-04-17T12:00"
+    },
+    {
+      "id": 6,
+      "title": "Garden Herbs",
+      "description": "Fresh basil, mint, parsley, and rosemary from my home garden. Pick what you need.",
+      "foodType": "Produce",
+      "quantity": "Several bunches",
+      "expiryDate": "2026-04-25T18:00",
+      "dietaryTags": [
+        "vegan",
+        "gluten_free"
+      ],
+      "city": "Downtown",
+      "address": "12 Garden Lane",
+      "donorId": 1,
+      "status": "reserved",
+      "createdAt": "2026-04-18T13:00",
+      "hideAddress": true,
+      "allowDiscreet": true
+    },
+    {
+      "id": 7,
+      "title": "Lentil Soup (Family Batch)",
+      "description": "Big pot of lentil soup with carrots and celery. Already cooled, easy to reheat.",
+      "foodType": "Prepared Food",
+      "quantity": "8 portions",
+      "expiryDate": "2026-04-23T20:00",
+      "dietaryTags": [
+        "vegan",
+        "vegetarian"
+      ],
+      "city": "Downtown",
+      "address": "12 Garden Lane",
+      "donorId": 1,
+      "status": "available",
+      "createdAt": "2026-04-18T13:30",
+      "hideAddress": true
+    }
+  ],
+  "requests": [
+    {
+      "id": 1,
+      "donationId": 1,
+      "requesterId": 1,
+      "pickupTime": "2026-04-19T14:00",
+      "notes": "Please ring doorbell",
+      "discreetPickup": false,
+      "status": "approved",
+      "createdAt": "2026-04-18T11:00"
+    },
+    {
+      "id": 2,
+      "donationId": 2,
+      "requesterId": 1,
+      "pickupTime": "2026-04-20T16:30",
+      "notes": "",
+      "discreetPickup": false,
+      "status": "pending",
+      "createdAt": "2026-04-18T10:30"
+    },
+    {
+      "id": 3,
+      "donationId": 3,
+      "requesterId": 1,
+      "pickupTime": "2026-04-18T10:00",
+      "notes": "Back entrance pickup",
+      "discreetPickup": true,
+      "status": "completed",
+      "createdAt": "2026-04-17T20:00"
+    },
+    {
+      "id": 4,
+      "donationId": 6,
+      "requesterId": 3,
+      "pickupTime": "2026-04-22T17:00",
+      "notes": "Would love to grab the basil if possible!",
+      "discreetPickup": false,
+      "status": "pending",
+      "createdAt": "2026-04-18T14:00"
+    }
+  ],
+  "reviews": [
+    {
+      "id": 1,
+      "donationId": 3,
+      "requestId": 3,
+      "reviewerId": 1,
+      "revieweeId": 4,
+      "rating": 5,
+      "comment": "Great quality pastries! Sarah was very kind and helpful.",
+      "createdAt": "2026-04-18T11:00"
+    }
+  ],
+  "nextDonationId": 8,
+  "nextRequestId": 5,
+  "nextReviewId": 2
+}

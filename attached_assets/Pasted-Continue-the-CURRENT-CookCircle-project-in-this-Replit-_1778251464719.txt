@@ -1,0 +1,201 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Do NOT redesign the product.
+Do NOT change the approved product scope.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+IMPORTANT
+You were asked to execute Sprint 1 (DB + backend foundation only), but the last execution drifted into Sprint 2 frontend work.
+Do NOT continue Sprint 2 now.
+Do NOT expand the UI further now.
+
+Your task is to STOP frontend expansion and correctly complete Sprint 1 only.
+
+SPRINT 1 MUST BE BACKEND / DATA FOUNDATION ONLY
+
+APPROVED SCOPE ONLY
+Keep everything strictly within:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+CURRENT PROBLEM
+The previous sprint response implemented partial Sprint 2 UI work before proving Sprint 1 foundation was complete.
+
+That is NOT acceptable as Sprint 1 completion.
+
+You must now:
+1. freeze new frontend work
+2. complete the missing Sprint 1 backend/data foundation
+3. clearly distinguish:
+   - what was already changed prematurely for Sprint 2
+   - what Sprint 1 actually requires
+4. finish Sprint 1 correctly
+
+FIXED SPRINT 1 REQUIREMENTS
+Sprint 1 is complete only if ALL of the following are implemented and clearly verified:
+
+PHASE 1 — DB SCHEMA FOUNDATION
+Implement and verify the real schema foundation for the new location model.
+
+You must explicitly confirm the DB now supports:
+- country
+- city
+- street
+- house_number
+- pickup_notes
+- formatted_address
+- place_id
+- geocode_provider
+- geocode_status
+- geocode_precision
+- exact_lat
+- exact_lng
+- area_lat
+- area_lng
+- area_label
+- area_radius_meters
+- location_confirmed
+
+Requirements:
+1. use a safe migration / schema update path
+2. handle legacy fields safely
+3. clearly state whether old address / latitude / longitude fields remain temporarily for compatibility
+4. explicitly handle hide_address removal/deprecation
+5. prove the schema changes were actually applied
+
+PHASE 2 — BACKEND LOCATION SERVICE FOUNDATION
+Complete the backend service layer foundation for the new location pipeline.
+
+You must explicitly confirm:
+1. the backend location service supports exact location data
+2. the backend location service supports area location data
+3. provider metadata exists
+4. geocode status exists
+5. geocode precision exists
+6. fallback mode does NOT treat exact location as verified exact data
+7. the area derivation helper exists and matches the locked decision (privacy-safe area derivation, not simple 2-decimal rounding)
+
+PHASE 3 — BACKEND PRIVACY SHAPING FOUNDATION
+Complete the backend location privacy shaping correctly.
+
+You must explicitly confirm:
+1. public viewer gets only area-level location data
+2. pending requester gets only area-level location data
+3. approved requester gets exact location data
+4. completed requester gets exact location data
+5. donor gets exact location data
+6. hide_address is no longer part of reveal logic
+7. backend remains source of truth
+
+PHASE 4 — ENFORCEMENT OF location_confirmed
+This is mandatory.
+
+You must explicitly confirm and prove:
+1. donations cannot become available unless location_confirmed = true
+2. this rule is enforced on the backend
+3. this is NOT only a frontend/UI rule
+4. fallback behavior is consistent with the locked policy
+5. exact verified publish cannot happen without confirmation
+
+PHASE 5 — SEED / DATA FOUNDATION
+Update and verify the seed/demo data foundation.
+
+You must explicitly confirm:
+1. seed data uses structured Israeli address fields
+2. seed data is compatible with the new schema
+3. area/exact values are stored correctly
+4. fallback/dev/demo behavior remains Israel-based and believable
+
+PHASE 6 — LEGACY COMPATIBILITY LAYER
+Because partial Sprint 2 work already happened, you must now make legacy compatibility explicit.
+
+You must clearly explain:
+1. what temporary compatibility behavior exists in the API response shape
+2. which old frontend expectations are still being supported temporarily
+3. how Sprint 2 can safely continue later without re-breaking the app
+
+PHASE 7 — DOCS / CONTRACT UPDATE
+Update technical docs to reflect true Sprint 1 completion.
+
+You must explicitly update:
+1. schema / backend contract docs
+2. any relevant README / technical notes
+3. any note about compatibility and deferred Sprint 2 work
+4. note the two important reminders:
+   - fallback/not-verified wording must remain trust-preserving
+   - address edit after approval must be included as a required Sprint 5 QA edge case
+
+MANDATORY NOTES TO HONOR
+1. Do NOT keep vague wording in fallback mode.
+   Use trust-preserving language such as:
+   - Location not verified
+   - Only general area will be shown
+   - Exact pickup location will be confirmed after approval / with verified provider
+
+2. Explicitly record in docs/backlog that:
+   address edit after approval is a required Sprint 5 QA edge case
+   and is not considered solved in Sprint 1.
+
+IMPORTANT EXECUTION BOUNDARY
+Do NOT do more Sprint 2 UI work now unless a tiny frontend compatibility fix is absolutely necessary to keep the app running.
+If you touch frontend, it must be only:
+- minimal compatibility fix
+- no new UI expansion
+- no new UX flow work
+
+SPRINT 1 ACCEPTANCE CRITERIA
+This sprint is only complete if ALL are true:
+1. schema foundation is truly implemented
+2. backend location service foundation is truly implemented
+3. privacy shaping is truly backend-driven
+4. location_confirmed is truly enforced server-side
+5. hide_address is removed from the privacy model
+6. area derivation matches the locked privacy-safe decision
+7. seed data matches the new schema
+8. current flows still run without major regression
+9. docs reflect Sprint 1 accurately
+10. Sprint 2 can start later without schema ambiguity
+
+RULES
+- no UI redesign
+- no new frontend feature work
+- no discovery mode
+- no vague theory
+- no long essay
+- execution only
+- finish Sprint 1 correctly
+
+OUTPUT FORMAT
+When done, return exactly:
+1. what Sprint 2 work was started prematurely
+2. files created or changed for real Sprint 1 completion
+3. schema changes actually applied
+4. backend service / area derivation changes actually applied
+5. privacy shaping / enforcement changes actually applied
+6. seed/data changes actually applied
+7. legacy compatibility behavior
+8. docs/contract updates made
+9. whether the app is still running
+10. any blockers or regressions
+11. what remains for Sprint 2

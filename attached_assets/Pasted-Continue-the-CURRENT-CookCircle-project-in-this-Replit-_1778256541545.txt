@@ -1,0 +1,243 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Sprint 1 is complete:
+- DB/schema foundation exists
+- exact + area location model exists
+- location_confirmed exists
+- backend privacy shaping exists
+- area derivation exists
+- hide_address is removed from the privacy model
+- compatibility aliases exist temporarily
+
+Sprint 2 is complete:
+- structured address UI exists in Create/Edit
+- location confirmation flow exists
+- city suggestions exist
+- Street has Google Places path when browser key exists
+- fallback UI path exists when browser key is missing
+
+Sprint 3 is complete:
+- real backend geocoding path is hardened
+- geocode status/precision handling exists
+- zero_results are blocked server-side
+- confirmation flow reflects real backend geocode states
+- OpenAPI/types were updated
+
+Sprint 4 is complete:
+- Donation Details has viewer-aware location behavior
+- area map vs exact map behavior exists
+- My Requests / My Donations location consistency improved
+- privacy-aware location UX is in place
+
+Sprint 5 is complete:
+- QA matrix was executed
+- critical lifecycle/privacy bugs were fixed
+- delete/status/address-edit guards were hardened
+- privacy payload cleanup was done
+- seed consistency was fixed
+
+Do NOT redo Sprint 1/2/3/4/5.
+Do NOT redesign the product.
+Do NOT change the approved product scope.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+This is SPRINT 6 — FINAL POLISH + DOCS + PACKAGING.
+
+APPROVED SCOPE ONLY
+Keep everything strictly within:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+SPRINT 6 GOAL
+Bring the project from “technically complete” to “submission-ready and presentation-ready” through final polish, documentation cleanup, compatibility cleanup where safe, deployment sanity, and packaging support.
+
+IMPORTANT
+This sprint is NOT for major new feature work.
+This sprint is for:
+- final polish
+- docs accuracy
+- packaging readiness
+- compatibility cleanup where safe
+- runtime/deployment sanity
+- evidence/readiness for presentation and submission
+
+Only fix real remaining issues.
+Prefer minimal safe changes.
+
+EXECUTE IN THESE PHASES
+
+PHASE 1 — FINAL PRODUCT POLISH
+Do a final restrained polish pass on the existing product.
+
+Focus only on weak remaining areas such as:
+- My Requests
+- Profile
+- Create / Edit Donation
+- Donation Details location copy / final clarity
+- any remaining slightly generic or inconsistent UI elements
+
+Requirements:
+1. no broad redesign
+2. no changing core flows
+3. improve visual consistency, microcopy, spacing, and clarity only where still weak
+4. keep the app feeling product-grade, clean, and trustworthy
+5. preserve current privacy/location logic
+
+PHASE 2 — COMPATIBILITY CLEANUP (SAFE ONLY)
+The system still carries some temporary compatibility behavior from earlier sprints.
+
+Requirements:
+1. audit remaining compatibility aliases and legacy field usage
+2. remove any alias that is no longer needed and is safe to remove now
+3. if some aliases must remain, document exactly why
+4. do NOT do risky cleanup that breaks the app
+5. keep the API/frontend stable
+
+Examples to inspect:
+- address
+- latitude
+- longitude
+- any mirrored location fields still kept for transition
+- any old free-text address expectations still lingering
+
+PHASE 3 — DOCS / OPENAPI / TECHNICAL CLEANUP
+Bring technical docs into final submission-ready shape.
+
+Requirements:
+1. make sure README reflects the real current implementation
+2. make sure OpenAPI reflects the real current endpoints and field behavior
+3. make sure env documentation is accurate
+4. make sure fallback vs real integration behavior is explicitly documented
+5. make sure privacy model is clearly documented:
+   - before approval = area only
+   - after approval = exact only for allowed viewers
+6. trim or clean documentation bloat where useful
+7. if replit.md is too long, reduce it into a cleaner current-state summary without losing key decisions
+
+PHASE 4 — DEPLOYMENT / RUNTIME SANITY
+Verify runtime and deployment readiness.
+
+Requirements:
+1. app must run cleanly
+2. health endpoints must work
+3. if public deployment/static build issues still exist, fix them now
+4. verify frontend build output / deployment path is correct
+5. verify runtime behavior matches docs
+6. do not leave deployment ambiguity unresolved if it is still broken
+
+PHASE 5 — PRESENTATION / DEMO READINESS
+Prepare the project so it is easy to show and explain.
+
+Requirements:
+1. identify the best 2–4 demo flows to present
+2. make sure seeded/demo data supports those flows cleanly
+3. remove confusing demo artifacts if needed
+4. make sure the UI state for demo users feels coherent
+5. add or update any small helper copy that improves demo clarity
+6. do NOT add fake data that breaks realism
+
+PHASE 6 — FINAL QA SMOKE PASS
+Run a final smoke pass across the current product.
+
+Verify all of these still work:
+- create donation
+- edit donation
+- delete donation where valid
+- donor lifecycle actions
+- request pickup
+- donor approve / decline
+- recipient complete pickup
+- review after completed request
+- session user switching
+- privacy gating
+- image handling
+- geocode preview / confirmation
+- area map before approval
+- exact map after approval
+- filters / sorting / discovery
+- profile save
+- location fallback behavior
+- zero_results blocking
+- address edit restrictions after approval
+
+Fix only real remaining bugs found.
+
+PHASE 7 — FINAL DELIVERY SUPPORT FILES
+Create/update the minimum supporting artifacts needed for final handoff.
+
+Requirements:
+1. make sure README contains:
+   - run steps
+   - env vars
+   - fallback vs real integrations
+   - current architecture summary
+2. make sure there is a concise project summary for future handoff
+3. if useful, add a short DEMO_GUIDE.md or equivalent with:
+   - recommended demo users
+   - recommended demo steps
+   - what to show
+4. keep supporting files concise and useful
+5. do not create bloated documentation
+
+MANDATORY NOTES TO HONOR
+1. Do NOT weaken backend privacy rules.
+2. Do NOT reintroduce hide_address behavior.
+3. Do NOT reopen address-edit-after-approval logic unless fixing a real bug.
+4. Do NOT fake real Google behavior if keys are absent.
+5. Keep trust-preserving wording in fallback/not-verified states.
+6. If deployment is still broken, fixing it is in scope for this sprint.
+7. If compatibility aliases remain, they must be explicitly justified.
+
+SPRINT 6 ACCEPTANCE CRITERIA
+This sprint is complete only if ALL are true:
+1. the app still runs correctly
+2. no major regression was introduced
+3. UI feels coherent and polished enough for final presentation
+4. docs reflect the real current system accurately
+5. OpenAPI is aligned with runtime behavior
+6. compatibility cleanup is done where safe, or remaining aliases are explicitly justified
+7. deployment/runtime status is clear and correct
+8. demo flows are easy to present
+9. the project feels ready for final submission packaging
+10. no major unresolved blocker remains for presentation/submission
+
+RULES
+- no broad redesign
+- no new feature expansion
+- no reopening closed architecture decisions
+- no vague theory
+- no long essay
+- execution only
+- fix and polish only what is truly needed for final readiness
+
+OUTPUT FORMAT
+When done, return exactly:
+1. files created or changed
+2. final polish changes made
+3. compatibility cleanup done
+4. docs/OpenAPI/runtime/deployment changes made
+5. demo-readiness changes made
+6. whether the app is still running
+7. any remaining blockers or known limitations
+8. what is still needed outside the codebase for final submission

@@ -1,0 +1,144 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+Do not redesign from scratch.
+Do not change the approved product scope.
+Do not add features outside the approved MVP/system scope.
+
+Approved CookCircle scope:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- new product directions
+
+Current status:
+- frontend runs
+- backend API exists
+- JSON persistence exists
+- frontend is connected to the API
+- donor-side request management exists
+- edit donation exists
+- end-to-end flow works
+
+Now execute the next major sprint:
+
+MAIN GOAL
+Move the project from a working MVP prototype into a more complete system aligned with the approved technical scope.
+
+PHASE 1 — REPLACE JSON PERSISTENCE WITH A REAL RELATIONAL DATABASE
+1. inspect the current project and current API server
+2. replace JSON-file persistence with a real relational database layer
+3. preferred target is MySQL because that is the approved project DB direction
+4. if MySQL is not practical inside this Replit workspace, use Replit Postgres as the relational DB, but structure the schema and queries cleanly and report the deviation clearly
+5. create the schema aligned to:
+   - users
+   - donations
+   - pickup_requests
+   - reviews
+
+PHASE 2 — KEEP ALL CURRENT FLOWS WORKING
+Preserve and keep working:
+- create donation
+- edit donation
+- delete donation
+- request pickup
+- donor approve / decline
+- recipient complete pickup
+- review after completed request
+- refresh-safe persistence
+
+PHASE 3 — MEDIA INTEGRATION LAYER
+Implement a real media handling path for donation images.
+
+Preferred:
+- if real Cloudinary credentials/environment are available, integrate real upload
+- otherwise create a clean media adapter with env-based configuration and a local/mock fallback
+- do not get blocked on missing credentials
+- keep the UI and data model aligned to image_url / image_public_id
+
+PHASE 4 — LOCATION INTEGRATION LAYER
+Improve the location handling to be closer to the approved scope.
+
+Requirements:
+- keep city/general location visible before approval
+- keep exact address hidden before approval
+- after approval/completion allow full pickup details
+- if real map/geocoding credentials are available, wire them
+- otherwise create a clean location service layer / adapter with safe fallback behavior
+- do not get blocked on missing API keys
+
+PHASE 5 — BACKEND HARDENING
+Add only the minimum hardening needed:
+- clean validation
+- correct status transitions
+- duplicate review protection
+- clear API errors
+- stable persistence
+- keep code simple and maintainable
+
+PHASE 6 — DO NOT EXPAND SCOPE
+Do not add auth unless absolutely necessary.
+Do not add notifications.
+Do not add chat.
+Do not add admin.
+Do not add any new product flow.
+
+Keep the current screens and UI structure unless small adjustments are required for integration.
+
+REQUIRED RULES
+Statuses must remain exactly:
+
+Donation:
+- available
+- reserved
+- picked_up
+- cancelled
+- expired
+
+PickupRequest:
+- pending
+- approved
+- cancelled
+- completed
+
+Dietary tags must remain exactly:
+- kosher
+- gluten_free
+- vegan
+- vegetarian
+
+Privacy rules:
+- no full address before approval
+- general location only before approval
+- full pickup details only after approval/completion
+
+OUTPUT FORMAT
+When done, return exactly:
+1. backend/database approach used
+2. files created or changed
+3. what was completed against the approved scope
+4. commands used
+5. preview/webview path
+6. any real remaining gaps
+
+Rules:
+- no audit
+- no long essay
+- no product brainstorm
+- no scope creep
+- execution only
+- make the biggest practical progress possible in one sprint

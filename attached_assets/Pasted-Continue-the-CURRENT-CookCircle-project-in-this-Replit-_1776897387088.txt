@@ -1,0 +1,155 @@
+Continue the CURRENT CookCircle project in this Replit.
+
+You already have full project context.
+Do NOT restart the product.
+Do NOT redesign the product scope.
+Do NOT add out-of-scope features.
+Do NOT change the approved MVP flows.
+
+Current goal:
+Raise the visual design quality significantly.
+The system works, but it still feels generic and too much like a basic MVP.
+I want a high-quality UI polish sprint that keeps the same product structure and flows, but upgrades the visual language and overall UX quality.
+
+Important:
+This is NOT a backend sprint.
+This is NOT a feature-expansion sprint.
+This is a focused UI / UX polish sprint.
+
+Approved product scope remains exactly the same:
+- Donation Lifecycle
+- Reservation / Pickup Request Management
+- Review / Rating flow
+- Dietary tags
+- Privacy / discreet pickup
+- Media / location placeholders or integrations already in place
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+Your job is to improve the existing app visually and structurally without changing the core flows.
+
+DESIGN DIRECTION:
+CookCircle should feel:
+- warm
+- modern
+- community-centered
+- trustworthy
+- clean
+- food-oriented
+- sustainable
+- polished
+- soft premium
+
+It should look like a real product, not a generic template.
+
+MAIN PROBLEMS TO FIX:
+1. The current UI still feels generic and flat.
+2. The visual hierarchy is weak.
+3. Cards, forms, and tables feel too basic.
+4. The layout feels too empty and not premium enough.
+5. Buttons and actions are functional but not elegant.
+6. Screens are consistent enough technically, but not yet strong enough visually.
+7. The donation feed images currently feel random / placeholder-like and hurt the experience.
+8. Profile / requests / donations screens still feel like plain forms and management panels instead of polished product screens.
+
+WHAT TO EXECUTE IN THIS SPRINT:
+
+PHASE 1 — DESIGN SYSTEM HARDENING
+Create a more refined visual system across the app:
+- improve typography hierarchy
+- improve spacing scale
+- improve border radius consistency
+- improve shadows and surface depth
+- refine color system
+- create a more premium neutral background treatment
+- strengthen primary / secondary / destructive / ghost button styles
+- improve badges, pills, tags, alerts, and status chips
+- reduce the “generic dashboard” feeling
+
+PHASE 2 — FEED / HOME PAGE UPLIFT
+Upgrade the donation feed experience:
+- make the page header / intro more visually appealing
+- improve the filter/search section so it feels like a polished discovery bar
+- improve donation cards significantly:
+  - better media presentation
+  - better internal spacing
+  - stronger title / meta hierarchy
+  - cleaner donor info
+  - better location / distance display
+  - more polished dietary tags
+  - clearer CTA
+- If current placeholder images are random or irrelevant, replace them with food-relevant placeholders or a consistent food image treatment
+
+PHASE 3 — MY DONATIONS / MY REQUESTS UPLIFT
+Redesign these management screens so they feel much more polished:
+- clearer information hierarchy
+- better grouped actions
+- primary actions should stand out
+- destructive actions should be visually de-emphasized but still visible
+- requests and statuses should be easier to scan
+- improve spacing and card layout
+- improve status visualization
+
+PHASE 4 — PROFILE PAGE UPLIFT
+Upgrade the profile/settings page:
+- make it feel like a polished account settings experience
+- improve section grouping
+- improve input styling
+- improve checkbox / toggle styling
+- improve profile summary / reputation area
+- improve overall layout and visual balance
+
+PHASE 5 — CREATE / DETAILS PAGE UPLIFT
+Upgrade high-value screens:
+- Create Donation should feel like a polished product form
+- improve upload area styling
+- improve privacy option presentation
+- improve section structure and layout
+- Donation Details should feel more premium and complete:
+  - better hero/media presentation
+  - cleaner donor section
+  - better map/location presentation
+  - better request panel design
+  - stronger CTA hierarchy
+
+PHASE 6 — CONSISTENCY PASS
+Do a final consistency pass across ALL screens:
+- unified spacing
+- unified typography
+- unified button system
+- unified cards
+- unified badges
+- unified form styling
+- unified empty/loading/error states
+- remove old generic or leftover styling patterns
+
+RULES:
+- keep changes within the current codebase
+- prefer upgrading the current components instead of rebuilding everything unnecessarily
+- do not break existing flows
+- do not change product scope
+- do not add backend features unless absolutely required for UI polish
+- do not write a long essay
+- do not brainstorm
+- execute practical UI improvements
+
+OUTPUT FORMAT:
+1. Briefly say what visual problems you found
+2. List the files you changed
+3. Implement the UI polish sprint
+4. Run the app
+5. Report:
+   - what changed visually
+   - which screens were upgraded
+   - whether the app is running
+   - what URL / preview to open
+   - any remaining visual gaps

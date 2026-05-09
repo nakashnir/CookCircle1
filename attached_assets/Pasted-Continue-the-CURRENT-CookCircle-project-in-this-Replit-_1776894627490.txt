@@ -1,0 +1,155 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+Do not redesign from scratch.
+Do not change the approved product scope.
+Do not add features outside the approved MVP/system scope.
+
+Approved scope only:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media/location integration
+7. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+Current status:
+- frontend works
+- backend API works
+- persistence exists
+- API client module exists
+- current project in Replit is the source of truth
+- remaining major gap is identity/privacy realism
+
+Now execute the next major sprint:
+
+MAIN GOAL
+Replace the hardcoded single-user assumption with a lightweight demo-safe identity/session layer, move privacy gating to the backend where possible, and wire the existing media/location layers more fully into the UI.
+
+PHASE 1 — ADD LIGHTWEIGHT DEMO IDENTITY LAYER
+Do NOT build full production auth.
+Instead, implement the smallest practical demo identity/session layer.
+
+Requirements:
+1. remove dependence on hardcoded CURRENT_USER_ID in the frontend
+2. create a simple current-user session mechanism suitable for demo/dev
+3. allow switching between a few seeded users in a controlled way
+4. the backend should know who the current user is
+5. the frontend should be able to fetch current user info from the backend
+
+Preferred approach:
+- a simple dev/demo session stored in cookie, local session, or explicit session endpoint
+- plus a small user-switcher for seeded demo users
+- keep it minimal and safe
+
+Add minimal endpoints if needed, such as:
+- GET /api/users
+- GET /api/users/me
+- POST /api/session/select-user
+or an equivalent minimal structure
+
+PHASE 2 — MOVE PRIVACY GATING SERVER-SIDE
+Currently privacy/address behavior should not rely only on the client.
+
+Requirements:
+1. backend should decide what pickup location fields are exposed depending on:
+   - current user
+   - request ownership
+   - request status
+   - donation privacy settings
+2. before approval:
+   - only city/general location
+3. after approval/completion:
+   - full pickup details allowed
+4. preserve all current UI behavior, but make the backend the real source of truth for visibility
+
+PHASE 3 — WIRE MEDIA LAYER INTO THE UI MORE FULLY
+If a media adapter already exists, complete the frontend wiring.
+
+Requirements:
+1. support selecting/uploading an image in Create Donation / Edit Donation
+2. if real Cloudinary credentials exist, use them
+3. if not, keep the current fallback behavior but make the UI actually go through the media layer
+4. preserve image_url / image_public_id handling
+
+PHASE 4 — WIRE LOCATION LAYER INTO THE UI MORE FULLY
+If a location adapter already exists, use it more explicitly in the UI.
+
+Requirements:
+1. ensure lat/lng are used consistently
+2. show a small map preview or location preview in Donation Details
+3. if possible, show a small location preview in Create/Edit Donation
+4. if real external map credentials do not exist, keep the local fallback behavior
+5. do not get blocked by missing third-party credentials
+
+PHASE 5 — KEEP ALL CURRENT FLOWS WORKING
+Preserve and keep working:
+- create donation
+- edit donation
+- delete donation
+- request pickup
+- donor approve / decline
+- recipient complete pickup
+- review after completed request
+- persistence after refresh
+
+PHASE 6 — KEEP MVP RULES INTACT
+Statuses must remain exactly:
+
+Donation:
+- available
+- reserved
+- picked_up
+- cancelled
+- expired
+
+PickupRequest:
+- pending
+- approved
+- cancelled
+- completed
+
+Dietary tags must remain exactly:
+- kosher
+- gluten_free
+- vegan
+- vegetarian
+
+Do not add extra flows.
+Do not add auth/signup/login UX unless absolutely necessary.
+Do not add unrelated UI.
+
+PHASE 7 — DEMO READINESS
+When finished:
+1. make sure the app still runs
+2. make sure switching users works
+3. make sure privacy behavior changes correctly by user/context
+4. make sure media/location still behave safely with or without external credentials
+
+OUTPUT FORMAT
+When done, return exactly:
+1. approach used
+2. files created or changed
+3. what was completed against the approved scope
+4. commands used
+5. preview/webview path
+6. any real remaining gaps
+
+Rules:
+- no audit
+- no long essay
+- no product brainstorm
+- no scope creep
+- execution only
+- make the biggest practical progress possible in one sprint

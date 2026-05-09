@@ -1,0 +1,226 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Do NOT redesign the product.
+Do NOT change the approved product scope.
+Do NOT reopen architectural discovery.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+This is SPRINT 1 — DB + BACKEND FOUNDATION for the new address / geocoding / privacy-map pipeline.
+
+Use the locked decisions from Sprint 0 and Sprint 0.1 as fixed constraints.
+
+FIXED CONSTRAINTS
+1. Primary provider direction remains Google Maps Platform
+   - Places / Autocomplete
+   - Geocoding / Address Validation
+   - Google Maps
+2. Address input will move away from free-text-only
+3. Store both:
+   - exact location
+   - general area location
+4. Backend is the source of truth for privacy and location visibility
+5. Airbnb-style privacy model is fixed:
+   - before approval = general area only
+   - after approval = exact address + exact map
+6. hide_address is removed as a donor override
+7. location_confirmed is required before a donation can become available
+8. In fallback mode, exact coordinates must never be treated as verified exact location
+9. Existing current product flows must continue working
+
+APPROVED SCOPE ONLY
+Keep everything strictly within:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+SPRINT 1 GOAL
+Build the DB and backend foundation required for the new location pipeline, so later sprints can add the new address UI, geocoding confirmation step, and privacy-aware maps without schema or service ambiguity.
+
+THIS SPRINT IS BACKEND / DATA LAYER ONLY
+Do NOT implement the full frontend address flow yet.
+Do NOT implement Google Autocomplete UI yet.
+Do NOT redesign the forms yet.
+
+ONLY build the backend/data foundation and any minimal compatibility updates needed so the app continues to run cleanly.
+
+EXECUTE IN THESE PHASES
+
+PHASE 1 — DATABASE SCHEMA FOUNDATION
+Update the donations/location data model in the DB.
+
+Implement the schema changes needed for the new location model, including:
+- country
+- city
+- street
+- house_number
+- pickup_notes
+- formatted_address
+- place_id
+- geocode_provider
+- geocode_status
+- geocode_precision
+- exact_lat
+- exact_lng
+- area_lat
+- area_lng
+- area_label
+- area_radius_meters
+- location_confirmed
+
+Requirements:
+1. keep the migration safe and practical
+2. preserve backwards compatibility where needed during transition
+3. clearly handle legacy fields such as the old free-text address and existing latitude/longitude fields
+4. remove or deprecate hide_address according to the locked decision
+5. migration must work against the CURRENT project state
+
+PHASE 2 — BACKEND LOCATION SERVICE FOUNDATION
+Refactor the backend location pipeline so it is ready for Google-first geocoding later.
+
+Implement or update backend service abstractions so the backend can support:
+- exact location result
+- area location result
+- provider metadata
+- geocode status
+- geocode precision
+- fallback mode behavior
+- location_confirmed enforcement
+
+Requirements:
+1. update the location service layer cleanly
+2. add any helper such as computeAreaPoint(...) according to the locked area derivation method
+3. in fallback mode, exact_lat / exact_lng must never be treated as verified exact coordinates
+4. exact + area behavior must be consistent and backend-driven
+
+PHASE 3 — SHAPING / PRIVACY FOUNDATION
+Update the backend response shaping logic so the system is ready for the new privacy model.
+
+Requirements:
+1. shapeDonation() or equivalent backend logic must clearly support:
+   - public viewer
+   - pending requester
+   - approved requester
+   - completed requester
+   - donor
+2. exact address / exact coordinates / pickup notes must only be returned when allowed
+3. public/pending viewers must receive only area-level location fields
+4. keep the backend as the sole source of truth for visibility
+5. remove any remaining dependence on hide_address as a donor-controlled override
+
+PHASE 4 — LEGACY COMPATIBILITY
+Because the frontend has not yet been fully migrated in this sprint, keep the project stable.
+
+Requirements:
+1. preserve current working app behavior as much as possible
+2. where old field names are still needed temporarily, provide compatibility in the API response shape
+3. do not break existing screens while preparing for Sprint 2
+4. clearly note any transitional compatibility layer added
+
+PHASE 5 — SEED / DEMO DATA FOUNDATION
+Update the seed/demo layer to be compatible with the new schema.
+
+Requirements:
+1. seed data should use structured Israeli address fields
+2. seed donations should contain realistic values for:
+   - city
+   - street
+   - house_number
+   - formatted_address
+   - exact or area values as appropriate
+3. demo/fallback mode should remain believable for Israel
+4. no San Francisco / global-random artifacts
+
+PHASE 6 — ENFORCEMENT RULES
+Implement the backend rule that a donation cannot become available unless location_confirmed is true.
+
+Requirements:
+1. the backend must enforce this
+2. do not rely on the frontend
+3. if location is not confirmed, donation must remain draft/non-available
+4. use safe transitional behavior so current working flows do not get unintentionally broken during this sprint
+
+PHASE 7 — TECHNICAL DOC / CONTRACT UPDATE
+Update technical documentation and contract files so Sprint 2 can continue cleanly.
+
+Requirements:
+1. update docs to reflect the new backend schema and service foundation
+2. document any temporary compatibility behavior
+3. document what is done in Sprint 1 and what is intentionally deferred to Sprint 2+
+4. keep the docs accurate and honest
+
+MANDATORY NOTES TO APPLY
+1. Fallback / not-verified wording:
+   When documenting or exposing fallback mode, do NOT use wording that sounds more precise than reality.
+   Prefer wording like:
+   - Location not verified
+   - Only general area will be shown
+   - Exact pickup location will be confirmed after approval / with verified provider
+   Keep trust high.
+
+2. Address edit after approval:
+   Do NOT solve this fully in Sprint 1 unless absolutely necessary.
+   But explicitly record it as a required QA / edge-case item for Sprint 5:
+   - what happens when a donor edits address after a requester was already approved
+   This must not be forgotten.
+
+NO FRONTEND SCOPE FOR THIS SPRINT
+Do NOT implement yet:
+- Google Places JS autocomplete UI
+- full address entry UI redesign
+- donor confirmation screen
+- exact/area dual-map UI flow
+These belong to later sprints.
+
+SPRINT 1 ACCEPTANCE CRITERIA
+This sprint is complete only if ALL are true:
+1. DB schema supports the new exact + area location model
+2. location_confirmed exists and is enforced server-side
+3. hide_address is removed from the privacy model
+4. backend shaping supports the new viewer-based location visibility model
+5. fallback mode does not produce fake verified exact behavior
+6. seed/demo data is aligned with Israeli structured addresses
+7. current product flows still run without major regression
+8. technical docs reflect the Sprint 1 foundation accurately
+9. Sprint 2 can begin without schema ambiguity
+
+RULES
+- no broad refactor beyond what Sprint 1 needs
+- no UI redesign
+- no discovery mode
+- no vague theory
+- no long essay
+- execution only
+- make the biggest practical backend/data progress possible in one sprint
+
+OUTPUT FORMAT
+When done, return exactly:
+1. files created or changed
+2. schema changes made
+3. backend service / shaping changes made
+4. legacy compatibility behavior added
+5. seed/data changes made
+6. enforcement rules added
+7. docs/contract updates made
+8. whether the app is still running
+9. any regressions or blockers
+10. what remains for Sprint 2

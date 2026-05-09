@@ -1,0 +1,253 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Do NOT restart the product.
+Do NOT redesign the product scope.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+APPROVED SCOPE ONLY
+Keep the project strictly within:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+CURRENT GOAL
+Execute one focused POWER MODE sprint that fixes the remaining real product gaps around:
+- Donation Details behavior for approved requests
+- map / location privacy UX
+- Airbnb-style general-area map behavior
+- Israel-based location realism
+- previous QA gaps that are still open
+
+This is NOT a broad redesign sprint.
+This is NOT a feature-expansion sprint outside scope.
+This is a targeted correctness + UX + privacy + location sprint.
+
+MAIN PROBLEMS TO FIX
+
+1. In Donation Details, when a request has already been approved, the current screen still feels wrong:
+   - it shows the donation as "Reserved"
+   - it hides or suppresses the map too aggressively
+   - it shows a generic "This donation is not available for pickup requests."
+   - this is confusing when the current viewer is the approved requester
+
+2. The current map/location behavior needs to become more product-like:
+   - before approval: show only general area / neighborhood / approximate radius
+   - after approval: show exact address and exact map location
+   - this should feel closer to Airbnb privacy behavior
+
+3. Fallback location behavior should feel local and believable:
+   - demo data should look like Israel
+   - maps and coordinates should not imply San Francisco or random global locations
+   - no misleading distance/location output
+
+4. Previous QA gaps must also be closed where still relevant:
+   - responsive behavior
+   - accessibility
+   - safer lifecycle action UX
+   - honest integration status
+   - docs accuracy
+
+EXECUTE IN THESE PHASES
+
+PHASE 1 — FIX DONATION DETAILS LOGIC FOR APPROVED REQUESTS
+This is a top-priority bug/UX issue.
+
+Requirements:
+1. inspect the current Donation Details logic carefully
+2. detect when the CURRENT viewer is:
+   - the donor
+   - the approved requester
+   - a public viewer
+3. if the current viewer is the approved requester or completed requester:
+   - do NOT show the generic message "This donation is not available for pickup requests."
+   - instead show a viewer-aware state such as:
+     - reserved for you
+     - approved pickup
+     - ready for pickup
+   - show the exact pickup location/address
+   - show the exact location map preview
+4. if the current viewer is a public viewer and the donation is reserved:
+   - do not expose the exact address
+   - do not expose the exact precise map point
+   - show only the appropriate non-sensitive state
+5. if the current viewer is the donor:
+   - show exact location and correct management context
+6. preserve all current status logic and permissions
+
+PHASE 2 — IMPLEMENT AIRBNB-STYLE LOCATION PRIVACY MODEL
+I want the map/location behavior to work like this:
+
+Before approval:
+- show only a general area
+- show only an approximate location / neighborhood / area / radius
+- do NOT show exact address
+- do NOT show exact marker position
+- do NOT show exact map pinpoint
+
+After approval or completion:
+- show exact address
+- show exact map position
+- show precise pickup location
+
+Implement this cleanly across backend and frontend:
+1. backend remains source of truth for visibility/privacy decisions
+2. frontend reflects viewer-aware location data
+3. public viewers see only general area behavior
+4. approved requesters and donors see full exact details
+5. preserve discreet/privacy rules
+
+PHASE 3 — GENERAL-AREA MAP EXPERIENCE
+I want a better product experience, closer to Airbnb.
+
+Requirements:
+1. before approval, show a general-area map preview instead of exact pinpoint
+2. this can be:
+   - a wider map centered on area/city
+   - a blurred / approximate marker region
+   - a radius / neighborhood style preview
+3. the result should communicate:
+   - roughly where the donation is
+   - without exposing exact pickup location
+4. after approval:
+   - switch to exact map/location preview
+5. do not overengineer
+6. keep it practical and aligned with the current codebase
+
+PHASE 4 — ISRAEL-BASED LOCATION REALISM
+Current demo/fallback behavior must feel regionally correct.
+
+Requirements:
+1. inspect the seed/demo location data
+2. ensure demo data is anchored to Israel-based cities/areas
+3. ensure fallback coordinates are believable for Israel, not random US/global-looking points
+4. ensure city/address examples feel regionally coherent
+5. ensure distance/location presentation does not damage trust
+6. if exact real provider is not active, fallback behavior should still feel locally believable
+
+PHASE 5 — MAP / PROVIDER / INTEGRATION HONESTY
+Verify and reflect the truth exactly.
+
+Requirements:
+1. confirm whether the current runtime uses:
+   - real Cloudinary or fallback
+   - real location provider or fallback
+2. if fallback is active:
+   - keep the UX honest
+   - do not imply exact real geolocation precision
+3. if a real provider is active:
+   - use it consistently
+4. update docs/UI wording if needed so the product does not mislead
+
+Never print secret values.
+Env var names only if needed.
+
+PHASE 6 — CLOSE THE PREVIOUS QA GAPS THAT STILL REMAIN
+Fix any still-open relevant gaps from the previous QA cycle:
+
+Responsive:
+- verify Home, My Donations, My Requests, Profile, Create Donation, Donation Details on smaller widths
+- improve layout where needed
+
+Accessibility:
+- continue improving semantics, labels, keyboard clarity, focus clarity, and weak low-clarity areas
+- keep it practical
+
+Safer lifecycle UX:
+- keep destructive actions properly guarded
+- keep My Donations action hierarchy safe and clear
+
+My Requests / Create / Profile polish:
+- continue refinement only where still weak
+- do not redesign from zero
+
+PHASE 7 — DOCS / TECHNICAL ACCURACY
+Make sure technical docs reflect the true current implementation.
+
+Requirements:
+1. update OpenAPI / technical docs if current runtime behavior changed
+2. update README / env docs if needed
+3. document privacy behavior clearly:
+   - public area map before approval
+   - exact map after approval
+4. document real integration vs fallback truth
+
+PHASE 8 — NO REGRESSION QA
+After all changes, verify all core flows still work:
+- create donation
+- edit donation
+- delete donation where valid
+- donor lifecycle actions
+- request pickup
+- donor approve / decline
+- recipient complete pickup
+- review after completed request
+- session user switching
+- privacy gating
+- image handling
+- location preview
+- general-area map before approval
+- exact map after approval
+- filters / sorting / discovery
+
+Fix any regressions with the smallest safe change set.
+
+MANDATORY SUCCESS CRITERIA
+This sprint is only complete if ALL are true:
+
+1. Donation Details behaves correctly for approved requesters
+2. Approved requesters can see exact address and exact map location
+3. Public viewers cannot see exact address or exact pinpoint before approval
+4. General-area / approximate map behavior works before approval
+5. Exact map behavior works after approval/completion
+6. Location fallback no longer feels globally/randomly wrong
+7. Israel-based demo/fallback data feels believable
+8. Existing approved product flows are not broken
+9. Docs accurately reflect real runtime behavior
+10. UI feels more product-like and less confusing in location/privacy flows
+
+RULES
+- keep changes within the current codebase
+- prefer targeted fixes over rewrites
+- no scope creep
+- no broad feature expansion
+- no long essay
+- no product brainstorming
+- execution only
+- make the biggest practical progress possible in one sprint
+
+OUTPUT FORMAT
+When done, return exactly:
+1. root problems found
+2. files created or changed
+3. what was fixed in each phase
+4. whether the app is running
+5. preview / webview path
+6. exact integration status:
+   - Cloudinary real or fallback
+   - location provider real or fallback
+7. how general-area map works before approval
+8. how exact map works after approval
+9. what changed in Donation Details behavior
+10. what changed in docs
+11. any regressions fixed
+12. any real remaining gaps

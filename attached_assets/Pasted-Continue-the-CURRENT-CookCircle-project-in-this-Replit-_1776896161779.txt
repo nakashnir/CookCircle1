@@ -1,0 +1,197 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+Do not redesign from scratch.
+Do not change the approved product scope.
+Do not add features outside the approved MVP/system scope.
+
+APPROVED SCOPE ONLY
+CookCircle must remain strictly within:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+CURRENT STATUS
+The current Replit project is the source of truth.
+The system already has:
+- working frontend
+- working backend
+- relational DB-backed persistence
+- API client layer
+- donor-side request management
+- review flow
+- session/demo identity layer
+- server-aware privacy gating
+- image picker
+- location preview
+
+Now execute the next MAJOR COMPLETION SPRINT.
+
+MAIN GOAL
+Move the project from “working MVP” to “near-complete academic system” by closing the remaining gaps around discovery/search, full donation lifecycle handling, integration activation, hardening, and delivery readiness.
+
+PHASE 1 — DISCOVERY / SEARCH COMPLETION
+Upgrade the donation discovery layer on both backend and frontend.
+
+Requirements:
+1. support backend filtering for donations by:
+   - city
+   - dietary tags
+   - availability/status where appropriate
+   - proximity/radius using lat/lng when available
+2. support sorting by:
+   - nearest
+   - newest
+   - expiring soon
+3. keep privacy intact:
+   - no exact address exposure before approval
+4. keep the frontend aligned with the existing feed UI
+5. do not overengineer search
+
+PHASE 2 — FULL DONATION LIFECYCLE COMPLETION
+Close the remaining lifecycle gaps for donors.
+
+Requirements:
+1. add donor-side actions where appropriate:
+   - mark donation as cancelled
+   - mark donation as expired
+   - reopen donation to available when valid
+2. enforce valid transitions only
+3. prevent invalid state changes
+4. do not break request/approval/completion flow
+5. keep status enums unchanged
+
+Donation statuses must remain exactly:
+- available
+- reserved
+- picked_up
+- cancelled
+- expired
+
+PickupRequest statuses must remain exactly:
+- pending
+- approved
+- cancelled
+- completed
+
+PHASE 3 — REAL INTEGRATION ACTIVATION
+Inspect the current environment and activate real integrations where possible.
+
+MEDIA:
+1. if real Cloudinary credentials are present, use the real Cloudinary path
+2. if not, keep fallback behavior but ensure the media adapter remains clean and consistent
+3. preserve image_url / image_public_id usage
+4. ensure Create Donation and Edit Donation both use the media layer correctly
+
+LOCATION:
+1. if real Google Maps / Mapbox / other provider credentials are present, use the real provider path
+2. if not, keep current fallback behavior
+3. use lat/lng consistently
+4. keep a location preview in Donation Details
+5. if practical, improve location preview in Create/Edit Donation too
+6. do not get blocked by missing third-party credentials
+
+PHASE 4 — BACKEND / RULE HARDENING
+Add only the minimum real hardening needed:
+1. validation for lifecycle transitions
+2. duplicate guards
+3. clean API error responses
+4. transactional safety where needed
+5. no broken data states
+6. stable seed/demo data
+7. preserve all current working flows
+
+PHASE 5 — FRONTEND UX CORRECTNESS
+Without broad redesign:
+1. ensure feed reflects new server-side filtering correctly
+2. show distance/location info when available
+3. keep Donation Details aligned with backend visibility rules
+4. preserve image rendering from the media layer
+5. make lifecycle actions visible but not confusing
+6. keep current UX simple, clear, and MVP-appropriate
+
+PHASE 6 — HANDOFF / SUBMISSION READINESS
+Create the minimum operational/documentation layer needed for handoff and academic submission.
+
+Requirements:
+1. make sure README is accurate and reflects the real implementation
+2. update .env.example if needed
+3. document required/optional environment variables
+4. document run commands
+5. document seed/reset steps
+6. clearly document any intentional deviations from the original technical plan
+   - for example: if Postgres is used instead of MySQL in this Replit environment
+7. document real remaining gaps only
+
+PHASE 7 — KEEP ALL CURRENT FLOWS WORKING
+Preserve and keep working:
+- create donation
+- edit donation
+- delete donation
+- request pickup
+- donor approve / decline
+- donor lifecycle actions
+- recipient complete pickup
+- review after completed request
+- session user switching
+- persistence after refresh
+- privacy gating
+- media handling
+- location preview
+
+PHASE 8 — DO NOT EXPAND SCOPE
+Do not add auth/signup/login UX unless absolutely necessary.
+Do not add notifications.
+Do not add chat.
+Do not add admin.
+Do not add extra product flows.
+Do not add features that are not already implied by the approved CookCircle scope.
+
+PRIVACY RULES
+Keep these rules intact:
+- no full address before approval
+- only general location before approval
+- full pickup details only after approval/completion
+- backend should remain the source of truth for visibility decisions
+
+DIETARY TAGS
+Keep these exactly:
+- kosher
+- gluten_free
+- vegan
+- vegetarian
+
+OUTPUT FORMAT
+When done, return exactly:
+1. approach used
+2. files created or changed
+3. what was completed against the approved scope
+4. commands used
+5. preview/webview path
+6. exact current integration status:
+   - Cloudinary real or fallback
+   - location provider real or fallback
+7. any real remaining gaps
+
+RULES
+- no audit
+- no long essay
+- no product brainstorm
+- no scope creep
+- execution only
+- make the biggest practical progress possible in one sprint

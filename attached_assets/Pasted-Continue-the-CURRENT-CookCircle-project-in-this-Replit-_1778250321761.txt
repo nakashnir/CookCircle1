@@ -1,0 +1,235 @@
+Continue the CURRENT CookCircle project in this Replit workspace.
+
+You already have full project context.
+The CURRENT Replit project is the source of truth.
+
+Do NOT redesign the product.
+Do NOT change the approved product scope.
+Do NOT reopen discovery.
+Do NOT add out-of-scope features.
+Do NOT break existing working flows.
+
+This is SPRINT 2 — ADDRESS INPUT UI + LOCATION CONFIRMATION FLOW.
+
+Use Sprint 0, Sprint 0.1, and Sprint 1 as fixed constraints.
+
+FIXED CONSTRAINTS
+1. Primary provider direction remains Google Maps Platform
+   - Places / Autocomplete
+   - Geocoding / Address Validation
+   - Google Maps only as the chosen provider direction
+2. Backend is the source of truth for privacy and location visibility
+3. The product privacy model is fixed:
+   - before approval = general area only
+   - after approval = exact address + exact map
+4. hide_address is removed from the product model
+5. location_confirmed is required before a donation can become available
+6. In fallback mode, exact coordinates must never be treated as verified exact location
+7. Sprint 1 backend/schema foundation is already done
+8. Address edit after approval remains deferred to Sprint 5 QA/edge-case handling unless absolutely needed for stability now
+
+APPROVED SCOPE ONLY
+Keep everything strictly within:
+1. Donation Lifecycle
+2. Reservation / Pickup Request Management
+3. Review / Rating flow
+4. dietary tags
+5. privacy / discreet pickup
+6. media integration
+7. location integration
+8. backend + database-backed application structure
+
+Do NOT add:
+- chat
+- AI assistant
+- shared cooking
+- admin dashboard
+- payments
+- delivery logistics
+- advanced notifications
+- gamification
+- any new product direction
+
+SPRINT 2 GOAL
+Replace the old free-text location entry UX with a structured address flow and implement the donor-side location confirmation experience, while keeping the product stable and aligned with the new backend model from Sprint 1.
+
+THIS SPRINT IS PRIMARILY FRONTEND + MINIMAL SUPPORTING BACKEND
+You may add the minimum backend/API support needed for location preview/confirmation if the current backend does not yet expose a clean preview flow.
+Do NOT do a broad backend redesign.
+
+EXECUTE IN THESE PHASES
+
+PHASE 1 — REPLACE OLD ADDRESS INPUT WITH STRUCTURED ADDRESS UI
+Update Create Donation and Edit Donation so they no longer rely on the old free-text-only address model.
+
+Build the new address form model using:
+- Country (read-only, Israel)
+- City
+- Street
+- House Number
+- Pickup Notes (private)
+
+Requirements:
+1. Create Donation must use the new structured fields
+2. Edit Donation must use the new structured fields
+3. old address UX should be removed or clearly retired from the main UI
+4. the UI should feel product-grade, not like a raw admin form
+5. preserve existing donation fields and flows
+
+PHASE 2 — CITY INPUT EXPERIENCE
+Implement the locked city decision from Sprint 0.1.
+
+Requirements:
+1. City must be a validated text input / combobox with suggestions from a real Israel city list
+2. do NOT use a seed-only dropdown
+3. support Hebrew and English matching where practical
+4. selecting a suggestion should fill the field cleanly
+5. typing a city without selecting should still be possible
+6. show useful validation / error states without making the UX clunky
+
+PHASE 3 — STREET + HOUSE NUMBER EXPERIENCE
+Implement the address line experience cleanly.
+
+Requirements:
+1. Street should support Google Places / Autocomplete when configured
+2. House Number remains a separate field
+3. if autocomplete returns route / street number / city, prefill what is reasonable
+4. donor can still edit the fields manually
+5. if autocomplete is unavailable, the form still works gracefully in fallback mode
+6. no raw technical API behavior should leak into the UI
+
+PHASE 4 — LOCATION PREVIEW / CONFIRMATION STEP
+Implement the mandatory confirmation step from Sprint 0.1.
+
+Requirements:
+1. donor cannot publish a donation until location is explicitly confirmed
+2. after the donor completes the address section and clicks the location preview step:
+   - show normalized / formatted address
+   - show exact map preview for the donor
+   - show area preview labelled as “what requesters see before approval”
+   - show a confidence / status indicator
+3. provide clear actions:
+   - Confirm location
+   - Confirm anyway (only for approximate-but-acceptable cases)
+   - Go back and edit address
+4. if geocode returns zero results:
+   - do not allow publish
+   - allow fixing the address
+   - allow draft/save only if aligned with Sprint 0.1 policy
+5. if fallback/local mode is active:
+   - be honest
+   - do not imply exact verified precision
+   - do not render an exact verified map based on fake exact coords
+
+IMPORTANT:
+If the current backend does not provide a clean preview endpoint yet, add the minimum backend support needed to make this confirmation step robust and clean.
+Prefer a small dedicated preview/confirm flow over hacks.
+
+PHASE 5 — WIRING TO THE NEW BACKEND MODEL
+Wire the frontend to the Sprint 1 backend model.
+
+Requirements:
+1. Create Donation and Edit Donation must send the new structured fields
+2. the UI must honor location_confirmed logic
+3. use the new backend field model cleanly
+4. keep compatibility stable where needed during transition
+5. do not leave the old free-text-only path as the main flow
+
+PHASE 6 — DONATION DETAILS / MAP COPY ALIGNMENT
+Do the minimum UI follow-through needed so the new model feels coherent.
+
+Requirements:
+1. if geocodeStatus / provider indicates fallback or not-verified mode:
+   - do not label the map as exact verified location
+   - use honest wording such as:
+     - Location not verified
+     - Only general area is shown
+2. approved requester / donor views should remain aligned with Sprint 1 privacy shaping
+3. public/pending viewers should still see only the area-level behavior
+4. no raw coordinates shown in normal UI
+
+PHASE 7 — FORM UX / ERROR STATES / TRUST
+Because this flow is trust-sensitive, make the UX strong.
+
+Requirements:
+1. strong validation and helper text where needed
+2. clear loading/searching states for location lookup
+3. clear failure states:
+   - address not found
+   - provider unavailable
+   - low-confidence location
+4. no confusing or overly technical copy
+5. keep trust high
+
+PHASE 8 — MINIMAL RESPONSIVE / ACCESSIBILITY SUPPORT
+Because this is a new form flow, make sure it is usable.
+
+Requirements:
+1. the new address UI works on desktop and mobile widths
+2. confirmation step works responsively
+3. fields and labels remain accessible
+4. focus/order/semantics remain reasonable
+5. do not overengineer, but do not leave the new flow desktop-only
+
+PHASE 9 — NO REGRESSION QA
+After implementation, verify that all current flows still work:
+- create donation
+- edit donation
+- donor lifecycle actions
+- request pickup
+- donor approve / decline
+- recipient complete pickup
+- review after completed request
+- session user switching
+- privacy gating
+- image handling
+- location preview
+- existing feed / details behavior
+
+Fix any real regressions with the smallest safe change set.
+
+MANDATORY NOTES TO APPLY
+1. Fallback / not-verified wording:
+   Do NOT use wording that sounds more precise than reality.
+   Prefer wording like:
+   - Location not verified
+   - Only general area will be shown
+   - Exact pickup location will be confirmed after approval / with verified provider
+
+2. Address edit after approval:
+   Do NOT solve this fully in Sprint 2 unless absolutely required for stability.
+   Keep it explicitly deferred to Sprint 5 QA/edge cases.
+
+SPRINT 2 ACCEPTANCE CRITERIA
+This sprint is complete only if ALL are true:
+1. Create Donation uses the new structured address model
+2. Edit Donation uses the new structured address model
+3. City input works as a validated combobox/suggestion experience
+4. Street + house number flow is clean and practical
+5. donor must go through a location confirmation step before publish
+6. location_confirmed is respected by the UI and backend flow
+7. fallback mode is honest and not misleading
+8. no raw coordinate UX appears in normal user flow
+9. current core product flows still work
+10. Sprint 3 can start without UI ambiguity
+
+RULES
+- no broad redesign
+- no backend rebuild
+- no discovery mode
+- no vague theory
+- no long essay
+- execution only
+- make the biggest practical progress possible in one sprint
+
+OUTPUT FORMAT
+When done, return exactly:
+1. files created or changed
+2. UI/address flow changes made
+3. any minimal backend/API support added
+4. how the confirmation step works
+5. fallback/not-verified behavior implemented
+6. compatibility behavior kept or removed
+7. whether the app is still running
+8. any regressions or blockers
+9. what remains for Sprint 3
