@@ -1202,7 +1202,7 @@ function DonationFeed({
               Fresh food,<br className="hidden sm:block" /> shared nearby.
             </h1>
             <p className="page-subtitle mb-5" style={{ maxWidth: 480 }}>
-              Surplus meals and ingredients from neighbors — free, local, and community-powered.
+              Discover fresh food nearby, shared freely by your community.
             </p>
             <div className="flex flex-wrap gap-2">
               <span className="trust-chip">🔒 Privacy-first</span>

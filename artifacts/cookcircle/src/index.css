@@ -1098,8 +1098,8 @@
       linear-gradient(160deg, #fdfbf6 0%, #f3ead8 60%, #fdfbf6 100%);
     border: 1px solid rgba(28, 53, 32, 0.08);
     border-radius: 24px;
-    padding: 40px 36px 36px;
-    margin-bottom: 28px;
+    padding: 32px 36px 30px;
+    margin-bottom: 24px;
     box-shadow: 0 1px 2px rgba(28, 53, 32, 0.04), 0 12px 40px -20px rgba(28, 53, 32, 0.14);
   }
   @media (max-width: 640px) {
@@ -1138,19 +1138,19 @@
   }
 
   .hero-stat {
-    flex: 1;
-    min-width: 100px;
     display: flex; flex-direction: row; align-items: center; gap: 10px;
-    padding: 11px 18px;
+    padding: 10px 16px;
     background: rgba(255, 255, 255, 0.72);
     border: 1px solid rgba(28, 53, 32, 0.09);
     border-radius: 14px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     box-shadow: 0 1px 2px rgba(28, 53, 32, 0.04);
+    width: 168px;
+    flex-shrink: 0;
   }
   @media (max-width: 480px) {
-    .hero-stat { flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 14px; }
+    .hero-stat { width: auto; flex: 1; min-width: 120px; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 14px; }
   }
   .hero-stat-value {
     font-family: 'Fraunces', serif;
