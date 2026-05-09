@@ -74,6 +74,12 @@
   }
   .nav-active:hover { background: #1c3520; }
 
+  .header-brand,
+  .header-actions,
+  .header-nav {
+    min-width: 0;
+  }
+
   /* User switcher */
   .user-switcher {
     background: rgba(253, 251, 246, 0.7);
@@ -2283,16 +2289,57 @@
     }
   }
 
+  @media (max-width: 640px) {
+    .header-inner {
+      gap: 10px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    .header-brand {
+      order: 1;
+      flex: 0 1 auto;
+    }
+
+    .header-actions {
+      order: 2 !important;
+      width: auto !important;
+      margin-left: auto !important;
+      justify-content: flex-end;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .header-nav {
+      order: 3 !important;
+      width: 100%;
+      overflow-x: visible !important;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .header-nav .nav-link {
+      flex: 1 1 auto;
+      min-width: max-content;
+      padding: 8px 11px;
+      text-align: center;
+      font-size: 13px;
+    }
+  }
+
   @media (max-width: 420px) {
     .header-gradient .brand-wordmark { font-size: 19px; }
     .header-gradient .brand-logo { width: 34px; height: 34px; }
     .header-actions {
-      order: 3 !important;
-      width: 100% !important;
-      margin-left: 0 !important;
-      justify-content: flex-start;
+      width: auto !important;
+      margin-left: auto !important;
     }
-    .header-nav { order: 4 !important; }
+    .header-nav { order: 3 !important; }
+    .header-nav .nav-link {
+      padding: 7px 9px;
+      font-size: 12.5px;
+    }
     .signout-button { padding: 7px 10px; font-size: 13px; }
     .header-create-button { padding: 9px 12px; }
     .impact-stats-grid { gap: 8px; }

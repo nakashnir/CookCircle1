@@ -1005,8 +1005,8 @@ function Header({ currentScreen, onNavigate, currentUser, onLogout }: {
 }) {
   return (
     <header className="header-gradient sticky top-0 z-30">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between px-4 md:px-8 py-3 md:py-4 gap-3">
-        <button onClick={() => onNavigate('feed')} className="flex items-center gap-3">
+      <div className="header-inner max-w-7xl mx-auto flex flex-wrap items-center justify-between px-4 md:px-8 py-3 md:py-4 gap-3">
+        <button onClick={() => onNavigate('feed')} className="header-brand flex items-center gap-3">
           <span className="brand-logo">🌿</span>
           <span className="brand-wordmark">CookCircle</span>
         </button>
