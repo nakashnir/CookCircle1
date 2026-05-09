@@ -29,7 +29,7 @@ import {
 // Never active in production builds (import.meta.env.DEV is false after build).
 // ---------------------------------------------------------------------------
 const IS_UI_PREVIEW =
-  import.meta.env.DEV &&
+  !!(import.meta as any).env?.DEV &&
   new URLSearchParams(window.location.search).get('uiPreview') === '1';
 
 const ISRAELI_CITIES = [
@@ -898,6 +898,8 @@ export default function App() {
         {currentScreen === 'feed' && (
           <DonationFeed
             donations={donations}
+            impactDonations={allDonations}
+            pickupRequests={requests}
             users={users}
             onViewDetails={viewDonationDetails}
             filterCity={filterCity} setFilterCity={setFilterCity}
@@ -997,7 +999,7 @@ function Header({ currentScreen, onNavigate, currentUser, onLogout }: {
           <span className="brand-logo">🌿</span>
           <span className="brand-wordmark">CookCircle</span>
         </button>
-        <nav className="flex gap-1 order-3 md:order-2 w-full md:w-auto overflow-x-auto">
+        <nav className="header-nav flex gap-1 order-3 md:order-2 w-full md:w-auto overflow-x-auto">
           {[['feed', 'Home'], ['my-donations', 'My Donations'], ['requests', 'My Requests'], ['profile', 'Profile']].map(([screen, label]) => (
             <button
               key={screen}
@@ -1008,17 +1010,17 @@ function Header({ currentScreen, onNavigate, currentUser, onLogout }: {
             </button>
           ))}
         </nav>
-        <div className="flex items-center gap-2 md:gap-3 order-2 md:order-3 ml-auto md:ml-0">
+        <div className="header-actions flex items-center gap-2 md:gap-3 order-2 md:order-3 ml-auto md:ml-0">
           <span className="text-sm text-zinc-600 hidden sm:inline truncate max-w-[140px]" title={currentUser.displayName}>
             👤 {currentUser.displayName}
           </span>
           <button
             onClick={onLogout}
-            className="px-3 py-1.5 text-sm border border-zinc-300 rounded-lg text-zinc-700 hover:bg-zinc-50 transition-colors"
+            className="signout-button px-3 py-1.5 text-sm border border-zinc-300 rounded-lg text-zinc-700 hover:bg-zinc-50 transition-colors"
           >
             Sign out
           </button>
-          <button onClick={() => onNavigate('create')} className="cta-button" aria-label="Create donation">
+          <button onClick={() => onNavigate('create')} className="cta-button header-create-button" aria-label="Create donation">
             <span aria-hidden="true">＋</span><span className="hidden sm:inline" aria-hidden="true">Create Donation</span>
           </button>
         </div>
@@ -1085,6 +1087,74 @@ function expiryHint(iso: string): { label: string; soon: boolean } | null {
   return { label: `${days}d left`, soon: false };
 }
 
+const COMPLETED_DONATION_STATUSES = new Set(['completed', 'picked_up', 'collected', 'shared', 'fulfilled']);
+const COMPLETED_REQUEST_STATUSES = new Set(['completed', 'picked_up', 'fulfilled', 'collected']);
+
+function normalizeStatus(status: unknown): string {
+  return String(status ?? '').trim().toLowerCase();
+}
+
+function isCompletedDonationStatus(status: unknown): boolean {
+  return COMPLETED_DONATION_STATUSES.has(normalizeStatus(status));
+}
+
+function isCompletedRequestStatus(status: unknown): boolean {
+  return COMPLETED_REQUEST_STATUSES.has(normalizeStatus(status));
+}
+
+function estimateQuantityKg(quantity: unknown): number {
+  const text = String(quantity ?? '').trim().toLowerCase();
+  if (!text) return 0.5;
+
+  const numberMatch = text.match(/(\d+(?:[.,]\d+)?)/);
+  if (!numberMatch) return 0.5;
+
+  const value = Number(numberMatch[1].replace(',', '.'));
+  if (!Number.isFinite(value) || value <= 0) return 0.5;
+
+  if (/\b(kilograms?|kilos?|kgs?|kg)\b/.test(text)) return value;
+  if (/\b(portions?|servings?|meals?|people|person|plates?)\b/.test(text)) return value * 0.45;
+
+  return Math.max(0.5, value * 0.45);
+}
+
+function calculateImpactStats(
+  donations?: DonationWithDistance[],
+  pickupRequests?: PickupRequest[],
+) {
+  const safeDonations = Array.isArray(donations) ? donations : [];
+  const safeRequests = Array.isArray(pickupRequests) ? pickupRequests : [];
+  const completedDonations = safeDonations.filter(d => isCompletedDonationStatus(d?.status));
+  const completedRequests = safeRequests.filter(r => isCompletedRequestStatus(r?.status));
+  const mealsShared = completedDonations.length > 0 ? completedDonations.length : completedRequests.length;
+  const requestDonationIds = new Set(completedRequests.map(r => r?.donationId).filter(id => id != null));
+  const foodSavedDonations = completedDonations.length > 0
+    ? completedDonations
+    : safeDonations.filter(d => requestDonationIds.has(d?.id));
+  const foodSavedKg = foodSavedDonations.reduce((total, donation) => (
+    total + estimateQuantityKg(donation?.quantity)
+  ), 0);
+  const citiesCovered = new Set(
+    safeDonations
+      .map(d => String(d?.city ?? '').trim())
+      .filter(Boolean)
+      .map(city => city.toLowerCase()),
+  ).size;
+
+  return {
+    mealsShared,
+    pickupsCompleted: completedRequests.length,
+    foodSavedKg,
+    citiesCovered,
+  };
+}
+
+function formatKg(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return '0';
+  if (value < 10 && !Number.isInteger(value)) return value.toFixed(1);
+  return String(Math.round(value));
+}
+
 function DonationCard({ donation, donor, onViewDetails, index = 0 }: {
   donation: DonationWithDistance; donor: User; onViewDetails: (id: number) => void; index?: number;
 }) {
@@ -1142,7 +1212,7 @@ function DonationCard({ donation, donor, onViewDetails, index = 0 }: {
 }
 
 function DonationFeed({
-  donations, users, onViewDetails,
+  donations, impactDonations, pickupRequests, users, onViewDetails,
   filterCity, setFilterCity,
   filterDietary, setFilterDietary,
   filterStatus, setFilterStatus,
@@ -1151,6 +1221,8 @@ function DonationFeed({
   locationFallback,
 }: {
   donations: DonationWithDistance[];
+  impactDonations?: DonationWithDistance[];
+  pickupRequests?: PickupRequest[];
   users: User[];
   onViewDetails: (id: number) => void;
   filterCity: string; setFilterCity: (v: string) => void;
@@ -1171,10 +1243,12 @@ function DonationFeed({
 
   const cities = Array.from(new Set(donations.map(d => d.city)));
 
-  const statItems = [
-    { value: donations.length > 0 ? donations.length : '—', label: 'Listings' },
-    { value: Array.from(new Set(donations.map(d => d.city))).length || '—', label: 'Cities' },
-    { value: donations.filter(d => d.dietaryTags?.includes('vegan') || d.dietaryTags?.includes('vegetarian')).length || '—', label: 'Plant-based' },
+  const impactStats = calculateImpactStats(impactDonations ?? donations, pickupRequests);
+  const impactItems = [
+    { value: impactStats.mealsShared, label: 'Meals shared' },
+    { value: impactStats.pickupsCompleted, label: 'Pickups completed' },
+    { value: formatKg(impactStats.foodSavedKg), label: 'kg saved est.' },
+    { value: impactStats.citiesCovered, label: 'Cities covered' },
   ];
 
   return (
@@ -1190,9 +1264,10 @@ function DonationFeed({
         <div className="hero-panel-bg-blob" style={{ width: 280, height: 280, background: 'radial-gradient(circle, rgba(238,156,90,0.18) 0%, transparent 70%)', top: '-60px', right: '5%' }} />
         <div className="hero-panel-bg-blob" style={{ width: 200, height: 200, background: 'radial-gradient(circle, rgba(143,176,145,0.20) 0%, transparent 70%)', bottom: '-40px', left: '3%' }} />
 
-        <div className="relative">
+        <div className="relative hero-content-grid">
           {/* Text block */}
           <motion.div
+            className="hero-copy"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
@@ -1211,23 +1286,31 @@ function DonationFeed({
             </div>
           </motion.div>
 
-          {/* Stats row — horizontal KPI strip */}
+          {/* Community impact — calculated from the current frontend data */}
           <motion.div
-            className="hero-stats-row"
+            className="impact-panel"
             initial="hidden"
             animate="visible"
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08, delayChildren: 0.3 } } }}
           >
-            {statItems.map(({ value, label }) => (
-              <motion.div
-                key={label}
-                className="hero-stat"
-                variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } } }}
-              >
-                <span className="hero-stat-value">{value}</span>
-                <span className="hero-stat-label">{label}</span>
-              </motion.div>
-            ))}
+            <div className="impact-panel-header">
+              <div>
+                <h2 className="impact-panel-title">Community impact</h2>
+                <p className="impact-panel-copy">Every pickup helps reduce waste and support neighbors.</p>
+              </div>
+            </div>
+            <div className="impact-stats-grid">
+              {impactItems.map(({ value, label }) => (
+                <motion.div
+                  key={label}
+                  className="impact-stat"
+                  variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } } }}
+                >
+                  <span className="impact-stat-value">{value}</span>
+                  <span className="impact-stat-label">{label}</span>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         </div>
       </motion.div>
