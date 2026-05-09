@@ -446,113 +446,190 @@ function AuthScreen({ onLogin }: { onLogin: (user: User) => void }) {
   };
 
   return (
-    <div className="min-h-screen app-background flex items-center justify-center p-4">
-      <div className="card p-6 w-full max-w-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <span className="brand-logo">🌿</span>
-          <span className="brand-wordmark">CookCircle</span>
+    <div className="app-background auth-shell">
+      {/* ── Left hero panel (desktop only) ── */}
+      <div className="auth-hero-panel">
+        {/* Decorative blobs */}
+        <div className="hero-panel-bg-blob" style={{ width: 320, height: 320, background: 'radial-gradient(circle, rgba(238,156,90,0.22) 0%, transparent 70%)', top: '8%', right: '-60px' }} />
+        <div className="hero-panel-bg-blob" style={{ width: 260, height: 260, background: 'radial-gradient(circle, rgba(143,176,145,0.22) 0%, transparent 70%)', bottom: '12%', left: '-40px' }} />
+
+        {/* Brand */}
+        <div className="flex items-center gap-3 mb-10">
+          <span className="brand-logo" style={{ width: 44, height: 44, fontSize: 22 }}>🌿</span>
+          <span className="brand-wordmark" style={{ fontSize: 26 }}>CookCircle</span>
         </div>
 
-        <div className="flex border-b border-zinc-200 mb-6">
-          <button
-            type="button"
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'login' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-zinc-500 hover:text-zinc-700'}`}
-            onClick={() => { setTab('login'); setError(null); }}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'register' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-zinc-500 hover:text-zinc-700'}`}
-            onClick={() => { setTab('register'); setError(null); }}
-          >
-            Register
-          </button>
+        {/* Headline */}
+        <div className="eyebrow mb-3">Community food sharing</div>
+        <h1 className="page-title mb-4" style={{ fontSize: 42, lineHeight: 1.08 }}>
+          Good food,<br />shared with care.
+        </h1>
+        <p className="page-subtitle mb-10" style={{ maxWidth: 360 }}>
+          CookCircle connects neighbors who have surplus food with those who can use it — privately, safely, and with trust at every step.
+        </p>
+
+        {/* Feature pills */}
+        <div className="flex flex-col gap-3 mb-10" style={{ maxWidth: 380 }}>
+          <div className="auth-feature-pill">
+            <span className="auth-feature-icon">🥗</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#152818' }}>Share surplus food</div>
+              <div style={{ fontSize: 12, color: '#6b7d6e', marginTop: 1 }}>Post meals, produce & pantry items in seconds</div>
+            </div>
+          </div>
+          <div className="auth-feature-pill">
+            <span className="auth-feature-icon">🤝</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#152818' }}>Discreet, private pickup</div>
+              <div style={{ fontSize: 12, color: '#6b7d6e', marginTop: 1 }}>Exact address revealed only to approved recipients</div>
+            </div>
+          </div>
+          <div className="auth-feature-pill">
+            <span className="auth-feature-icon">⭐</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#152818' }}>Build community trust</div>
+              <div style={{ fontSize: 12, color: '#6b7d6e', marginTop: 1 }}>Ratings and reviews after every successful pickup</div>
+            </div>
+          </div>
         </div>
 
-        {tab === 'login' ? (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label htmlFor="auth-email" className="form-label">Email</label>
-              <input
-                id="auth-email"
-                type="email"
-                className="input-field"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-            </div>
-            <div>
-              <label htmlFor="auth-password" className="form-label">Password</label>
-              <input
-                id="auth-password"
-                type="password"
-                className="input-field"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
-            </div>
-            {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-            <button type="submit" disabled={busy} className="cta-button w-full justify-center">
-              {busy ? 'Signing in…' : 'Sign In'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div>
-              <label htmlFor="auth-name" className="form-label">Name</label>
-              <input
-                id="auth-name"
-                type="text"
-                className="input-field"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                required
-                minLength={2}
-                autoComplete="name"
-              />
-            </div>
-            <div>
-              <label htmlFor="auth-email-r" className="form-label">Email</label>
-              <input
-                id="auth-email-r"
-                type="email"
-                className="input-field"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-            </div>
-            <div>
-              <label htmlFor="auth-password-r" className="form-label">Password (min. 8 characters)</label>
-              <input
-                id="auth-password-r"
-                type="password"
-                className="input-field"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                minLength={8}
-                autoComplete="new-password"
-              />
-            </div>
-            {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-            <button type="submit" disabled={busy} className="cta-button w-full justify-center">
-              {busy ? 'Creating account…' : 'Create Account'}
-            </button>
-          </form>
-        )}
+        {/* Trust chips */}
+        <div className="flex flex-wrap gap-2">
+          <span className="trust-chip">🔒 Privacy-first</span>
+          <span className="trust-chip">📍 Israel-wide</span>
+          <span className="trust-chip">♻️ Reduce food waste</span>
+        </div>
+      </div>
 
-        <div className="mt-6 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 space-y-0.5">
-          <div className="font-medium mb-1">Demo credentials (password: CookCircle123!)</div>
-          <div>Donor (Yael): <button type="button" className="font-mono underline hover:no-underline" onClick={() => { setEmail('yael@example.co.il'); setTab('login'); }}>yael@example.co.il</button></div>
-          <div>Donor (Maya): <button type="button" className="font-mono underline hover:no-underline" onClick={() => { setEmail('maya@example.co.il'); setTab('login'); }}>maya@example.co.il</button></div>
-          <div>User (David): <button type="button" className="font-mono underline hover:no-underline" onClick={() => { setEmail('david@example.co.il'); setTab('login'); }}>david@example.co.il</button></div>
+      {/* ── Right form panel ── */}
+      <div className="auth-form-panel">
+        <div className="card p-6 w-full max-w-sm" style={{ boxShadow: '0 2px 4px rgba(28,53,32,0.06), 0 20px 48px -16px rgba(28,53,32,0.18)' }}>
+          {/* Mobile-only brand header */}
+          <div className="flex items-center gap-3 mb-6 lg:hidden">
+            <span className="brand-logo">🌿</span>
+            <span className="brand-wordmark">CookCircle</span>
+          </div>
+
+          <div className="flex border-b border-zinc-200 mb-6">
+            <button
+              type="button"
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'login' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-zinc-500 hover:text-zinc-700'}`}
+              onClick={() => { setTab('login'); setError(null); }}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'register' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-zinc-500 hover:text-zinc-700'}`}
+              onClick={() => { setTab('register'); setError(null); }}
+            >
+              Register
+            </button>
+          </div>
+
+          {tab === 'login' ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label htmlFor="auth-email" className="form-label">Email</label>
+                <input
+                  id="auth-email"
+                  type="email"
+                  className="input-field"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+              <div>
+                <label htmlFor="auth-password" className="form-label">Password</label>
+                <input
+                  id="auth-password"
+                  type="password"
+                  className="input-field"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+              {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+              <button type="submit" disabled={busy} className="cta-button w-full justify-center">
+                {busy ? 'Signing in…' : 'Sign In'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div>
+                <label htmlFor="auth-name" className="form-label">Name</label>
+                <input
+                  id="auth-name"
+                  type="text"
+                  className="input-field"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  required
+                  minLength={2}
+                  autoComplete="name"
+                />
+              </div>
+              <div>
+                <label htmlFor="auth-email-r" className="form-label">Email</label>
+                <input
+                  id="auth-email-r"
+                  type="email"
+                  className="input-field"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+              <div>
+                <label htmlFor="auth-password-r" className="form-label">Password (min. 8 characters)</label>
+                <input
+                  id="auth-password-r"
+                  type="password"
+                  className="input-field"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </div>
+              {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+              <button type="submit" disabled={busy} className="cta-button w-full justify-center">
+                {busy ? 'Creating account…' : 'Create Account'}
+              </button>
+            </form>
+          )}
+
+          {/* Demo credentials — polished quick-access card */}
+          <div className="demo-creds-card">
+            <div className="demo-creds-title">⚡ Quick demo access</div>
+            <div className="demo-creds-row">
+              <span className="demo-creds-label">🧑‍🍳 Donor — Yael</span>
+              <button type="button" className="demo-creds-btn" onClick={() => { setEmail('yael@example.co.il'); setTab('login'); }}>
+                yael@example.co.il
+              </button>
+            </div>
+            <div className="demo-creds-row">
+              <span className="demo-creds-label">👩‍🍳 Donor — Maya</span>
+              <button type="button" className="demo-creds-btn" onClick={() => { setEmail('maya@example.co.il'); setTab('login'); }}>
+                maya@example.co.il
+              </button>
+            </div>
+            <div className="demo-creds-row">
+              <span className="demo-creds-label">🙋 User — David</span>
+              <button type="button" className="demo-creds-btn" onClick={() => { setEmail('david@example.co.il'); setTab('login'); }}>
+                david@example.co.il
+              </button>
+            </div>
+            <p style={{ fontSize: 11, color: '#8a9b8c', textAlign: 'center', marginTop: 10 }}>
+              Password for all accounts: <span style={{ fontWeight: 600, color: '#4b5d4d' }}>CookCircle123!</span>
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -822,8 +899,9 @@ export default function App() {
           <div className="alert-pending mb-6">⚠️ {loadError}</div>
         )}
         {toast && (
-          <div className={`mb-6 rounded-lg px-4 py-3 text-sm font-medium ${toast.kind === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
-            {toast.kind === 'success' ? '✓ ' : '⚠️ '}{toast.message}
+          <div className={`toast-overlay ${toast.kind === 'success' ? 'toast-success' : 'toast-error'}`} role="status" aria-live="polite">
+            <span aria-hidden="true">{toast.kind === 'success' ? '✓' : '⚠'}</span>
+            {toast.message}
           </div>
         )}
         {busy && (
@@ -1085,10 +1163,45 @@ function DonationFeed({
 
   return (
     <div>
-      <div className="mb-8">
-        <div className="eyebrow mb-2">Community feed</div>
-        <h1 className="page-title">Fresh food, shared nearby.</h1>
-        <p className="page-subtitle">Discover surplus meals and ingredients your neighbors are sharing today.</p>
+      {/* ── Feed hero panel ── */}
+      <div className="hero-panel mb-8">
+        {/* Decorative blobs — CSS only */}
+        <div className="hero-panel-bg-blob" style={{ width: 280, height: 280, background: 'radial-gradient(circle, rgba(238,156,90,0.18) 0%, transparent 70%)', top: '-60px', right: '5%' }} />
+        <div className="hero-panel-bg-blob" style={{ width: 200, height: 200, background: 'radial-gradient(circle, rgba(143,176,145,0.20) 0%, transparent 70%)', bottom: '-40px', left: '3%' }} />
+
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          {/* Text side */}
+          <div className="flex-1 min-w-0">
+            <span className="hero-pill">🌿 Community food sharing</span>
+            <h1 className="page-title mb-3" style={{ fontSize: 'clamp(28px, 4vw, 46px)' }}>
+              Fresh food,<br className="hidden sm:block" /> shared nearby.
+            </h1>
+            <p className="page-subtitle mb-6" style={{ maxWidth: 440 }}>
+              Discover surplus meals and ingredients your neighbors are sharing today — free, local, and community-powered.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <span className="trust-chip">🔒 Privacy-first location</span>
+              <span className="trust-chip">📍 Israel-wide</span>
+              <span className="trust-chip">♻️ Reduce food waste</span>
+            </div>
+          </div>
+
+          {/* Stats side */}
+          <div className="flex gap-3 flex-shrink-0 flex-wrap">
+            <div className="hero-stat">
+              <span className="hero-stat-value">{donations.length > 0 ? donations.length : '—'}</span>
+              <span className="hero-stat-label">Available</span>
+            </div>
+            <div className="hero-stat">
+              <span className="hero-stat-value">{Array.from(new Set(donations.map(d => d.city))).length || '—'}</span>
+              <span className="hero-stat-label">Cities</span>
+            </div>
+            <div className="hero-stat">
+              <span className="hero-stat-value">{donations.filter(d => d.dietaryTags?.includes('vegan') || d.dietaryTags?.includes('vegetarian')).length || '—'}</span>
+              <span className="hero-stat-label">Plant-based</span>
+            </div>
+          </div>
+        </div>
       </div>
       <div className="filter-card mb-8">
         <div className="input-affix mb-3">
