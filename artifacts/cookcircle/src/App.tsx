@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import { FloatingFoodHero } from './components/FloatingFoodHero';
 import {
   api,
@@ -1056,14 +1057,20 @@ function DietaryTagBadge({ tag }: { tag: DietaryTag }) {
   return <span className="dietary-tag">{labels[tag]}</span>;
 }
 
-function EmptyState({ message }: { message: string }) {
+function EmptyState({ message, title }: { message: string; title?: string }) {
   return (
-    <div className="empty-state">
-      <div className="max-w-md mx-auto">
-        <div className="empty-icon">📦</div>
+    <motion.div
+      className="empty-state"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <div className="max-w-sm mx-auto">
+        <div className="empty-icon">🌾</div>
+        {title && <h3 className="empty-title">{title}</h3>}
         <p className="empty-text">{message}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1078,10 +1085,20 @@ function expiryHint(iso: string): { label: string; soon: boolean } | null {
   return { label: `${days}d left`, soon: false };
 }
 
-function DonationCard({ donation, donor, onViewDetails }: { donation: DonationWithDistance; donor: User; onViewDetails: (id: number) => void; }) {
+function DonationCard({ donation, donor, onViewDetails, index = 0 }: {
+  donation: DonationWithDistance; donor: User; onViewDetails: (id: number) => void; index?: number;
+}) {
   const expiry = expiryHint(donation.expiryDate);
+  const initials = donor.displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
   return (
-    <div className="card flex flex-col">
+    <motion.div
+      className="card flex flex-col"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.38, delay: Math.min(index * 0.07, 0.35), ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{ y: -6, transition: { duration: 0.2, ease: 'easeOut' } }}
+    >
       <div className="card-image">
         <DonationImage url={donation.imageUrl} foodType={donation.foodType} seedId={donation.id} />
         <div className="image-badge">
@@ -1094,27 +1111,33 @@ function DonationCard({ donation, donor, onViewDetails }: { donation: DonationWi
         )}
       </div>
       <div className="card-body flex-1 flex flex-col">
+        <div className="card-food-type">{donation.foodType}</div>
         <h3 className="card-title">{donation.title}</h3>
         <div className="card-meta">
+          <span className="donor-avatar" aria-hidden>{initials}</span>
           <span>{donor.displayName}</span>
-          <span className="text-zinc-300">·</span>
-          <span className="card-rating">⭐ {donor.rating.toFixed(1)}</span>
+          <span className="card-rating ml-auto">⭐ {donor.rating.toFixed(1)}</span>
         </div>
-        <div className="mt-4 space-y-2 text-[13.5px]">
-          <div className="card-info"><span className="card-label">{donation.foodType}</span><span className="card-value">{donation.quantity}</span></div>
-          <div className="card-location"><span>📍</span><span>{donation.city}</span></div>
+        <div className="card-details-row">
+          <span aria-hidden>🍽</span>
+          <span>{donation.quantity}</span>
+          <span className="card-sep" aria-hidden>·</span>
+          <span aria-hidden>📍</span>
+          <span>{donation.city}</span>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5 mt-3">
-          {expiry && donation.status === 'available' && (
-            <span className={`expiry-pill ${expiry.soon ? 'is-soon' : ''}`}>⏱ {expiry.label}</span>
-          )}
-          {donation.dietaryTags.map((tag) => <DietaryTagBadge key={tag} tag={tag} />)}
-        </div>
-        <button onClick={() => onViewDetails(donation.id)} className="btn-primary w-full mt-5">
+        {(donation.dietaryTags.length > 0 || (expiry && donation.status === 'available')) && (
+          <div className="flex flex-wrap items-center gap-1.5 mt-3">
+            {expiry && donation.status === 'available' && (
+              <span className={`expiry-pill ${expiry.soon ? 'is-soon' : ''}`}>⏱ {expiry.label}</span>
+            )}
+            {donation.dietaryTags.map((tag) => <DietaryTagBadge key={tag} tag={tag} />)}
+          </div>
+        )}
+        <button onClick={() => onViewDetails(donation.id)} className="card-cta mt-auto pt-4">
           View details <span aria-hidden>→</span>
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1148,109 +1171,137 @@ function DonationFeed({
 
   const cities = Array.from(new Set(donations.map(d => d.city)));
 
+  const statItems = [
+    { value: donations.length > 0 ? donations.length : '—', label: 'Listings' },
+    { value: Array.from(new Set(donations.map(d => d.city))).length || '—', label: 'Cities' },
+    { value: donations.filter(d => d.dietaryTags?.includes('vegan') || d.dietaryTags?.includes('vegetarian')).length || '—', label: 'Plant-based' },
+  ];
+
   return (
     <div>
       {/* ── Feed hero panel ── */}
-      <div className="hero-panel mb-8">
+      <motion.div
+        className="hero-panel mb-8"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      >
         {/* Decorative blobs — CSS only */}
         <div className="hero-panel-bg-blob" style={{ width: 280, height: 280, background: 'radial-gradient(circle, rgba(238,156,90,0.18) 0%, transparent 70%)', top: '-60px', right: '5%' }} />
         <div className="hero-panel-bg-blob" style={{ width: 200, height: 200, background: 'radial-gradient(circle, rgba(143,176,145,0.20) 0%, transparent 70%)', bottom: '-40px', left: '3%' }} />
 
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           {/* Text side */}
-          <div className="flex-1 min-w-0">
+          <motion.div
+            className="flex-1 min-w-0"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          >
             <span className="hero-pill">🌿 Community food sharing</span>
-            <h1 className="page-title mb-3" style={{ fontSize: 'clamp(28px, 4vw, 46px)' }}>
+            <h1 className="page-title mb-3" style={{ fontSize: 'clamp(26px, 3.5vw, 42px)' }}>
               Fresh food,<br className="hidden sm:block" /> shared nearby.
             </h1>
-            <p className="page-subtitle mb-6" style={{ maxWidth: 440 }}>
-              Discover surplus meals and ingredients your neighbors are sharing today — free, local, and community-powered.
+            <p className="page-subtitle mb-5" style={{ maxWidth: 420 }}>
+              Surplus meals and ingredients from neighbors — free, local, and community-powered.
             </p>
             <div className="flex flex-wrap gap-2">
-              <span className="trust-chip">🔒 Privacy-first location</span>
+              <span className="trust-chip">🔒 Privacy-first</span>
               <span className="trust-chip">📍 Israel-wide</span>
               <span className="trust-chip">♻️ Reduce food waste</span>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Stats side */}
-          <div className="flex gap-3 flex-shrink-0 flex-wrap">
-            <div className="hero-stat">
-              <span className="hero-stat-value">{donations.length > 0 ? donations.length : '—'}</span>
-              <span className="hero-stat-label">Available</span>
-            </div>
-            <div className="hero-stat">
-              <span className="hero-stat-value">{Array.from(new Set(donations.map(d => d.city))).length || '—'}</span>
-              <span className="hero-stat-label">Cities</span>
-            </div>
-            <div className="hero-stat">
-              <span className="hero-stat-value">{donations.filter(d => d.dietaryTags?.includes('vegan') || d.dietaryTags?.includes('vegetarian')).length || '—'}</span>
-              <span className="hero-stat-label">Plant-based</span>
-            </div>
-          </div>
+          {/* Stats side — staggered entrance */}
+          <motion.div
+            className="flex gap-3 flex-shrink-0 flex-wrap md:flex-col md:gap-2"
+            initial="hidden"
+            animate="visible"
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.09, delayChildren: 0.28 } } }}
+          >
+            {statItems.map(({ value, label }) => (
+              <motion.div
+                key={label}
+                className="hero-stat"
+                variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }}
+              >
+                <span className="hero-stat-value">{value}</span>
+                <span className="hero-stat-label">{label}</span>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
+
+      {/* ── Filter / search bar ── */}
       <div className="filter-card mb-8">
-        <div className="input-affix mb-3">
+        <div className="input-affix mb-4">
           <span className="input-affix-icon">🔍</span>
           <input
             type="text"
-            placeholder="Search donations by name, ingredient, or dish…"
+            placeholder="Search by name, ingredient, or dish…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="search-input"
           />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="input-field">
-            <option value="">📍 All cities</option>
+        <div className="filter-row">
+          <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="input-field filter-select">
+            <option value="">All cities</option>
             {cities.map(city => <option key={city} value={city}>{city}</option>)}
           </select>
-          <select value={filterDietary} onChange={(e) => setFilterDietary(e.target.value as DietaryTag | '')} className="input-field">
-            <option value="">🥗 All dietary tags</option>
+          <select value={filterDietary} onChange={(e) => setFilterDietary(e.target.value as DietaryTag | '')} className="input-field filter-select">
+            <option value="">All dietary</option>
             <option value="vegan">Vegan</option>
             <option value="vegetarian">Vegetarian</option>
             <option value="gluten_free">Gluten-Free</option>
             <option value="kosher">Kosher</option>
           </select>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as DonationStatus | 'any')} className="input-field">
-            <option value="available">● Available only</option>
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as DonationStatus | 'any')} className="input-field filter-select">
+            <option value="available">● Available</option>
             <option value="reserved">Reserved</option>
             <option value="picked_up">Picked up</option>
             <option value="expired">Expired</option>
             <option value="cancelled">Cancelled</option>
             <option value="any">Any status</option>
           </select>
-          <select value={sortMode} onChange={(e) => setSortMode(e.target.value as any)} className="input-field">
+          <select value={sortMode} onChange={(e) => setSortMode(e.target.value as any)} className="input-field filter-select">
             <option value="newest">↓ Newest first</option>
-            <option value="expiring">⏱ Expiring soonest</option>
+            <option value="expiring">⏱ Expiring soon</option>
             {!locationFallback && (
-              <option value="nearest" disabled={!origin}>📍 Nearest{origin ? '' : ' (set location)'}</option>
+              <option value="nearest" disabled={!origin}>📍 Nearest{origin ? '' : ' (needs location)'}</option>
             )}
           </select>
         </div>
-        <div className="mt-3 flex items-center gap-3 text-sm flex-wrap">
-          {!locationFallback && (
-            origin ? (
-              <>
-                <span className="distance-pill">📍 Using your location</span>
-                <button onClick={clearOrigin} className="btn-ghost">Clear location</button>
-              </>
-            ) : (
-              <button onClick={useMyLocation} className="btn-ghost">📍 Use my location</button>
-            )
-          )}
-          {originError && <span className="text-red-600 text-xs">{originError}</span>}
-        </div>
+        {(!locationFallback || originError) && (
+          <div className="mt-3 flex items-center gap-3 text-sm flex-wrap">
+            {!locationFallback && (
+              origin ? (
+                <>
+                  <span className="distance-pill">📍 Using your location</span>
+                  <button onClick={clearOrigin} className="btn-ghost">Clear</button>
+                </>
+              ) : (
+                <button onClick={useMyLocation} className="btn-ghost">📍 Use my location</button>
+              )
+            )}
+            {originError && <span className="text-red-600 text-xs">{originError}</span>}
+          </div>
+        )}
       </div>
+
+      {/* ── Donation grid ── */}
       {visible.length === 0 ? (
-        <EmptyState message="No donations match your filters yet. Try widening your search." />
+        <EmptyState
+          title="Nothing here yet"
+          message="No donations match your current filters. Try a different city, dietary tag, or set status to 'Any'."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {visible.map((d) => {
+          {visible.map((d, idx) => {
             const donor = users.find(u => u.id === d.donorId);
             if (!donor) return null;
-            return <DonationCard key={d.id} donation={d} donor={donor} onViewDetails={onViewDetails} />;
+            return <DonationCard key={d.id} donation={d} donor={donor} onViewDetails={onViewDetails} index={idx} />;
           })}
         </div>
       )}
