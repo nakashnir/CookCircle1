@@ -925,6 +925,7 @@ export default function App() {
               onSubmitRequest={createPickupRequest}
               currentUserId={currentUser.id}
               requests={requests}
+              reviews={reviews}
               locationFallback={healthStatus ? healthStatus.location === 'local' : true}
             />
           );
@@ -1391,8 +1392,8 @@ function DonationFeed({
   );
 }
 
-function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUserId, requests, locationFallback }: {
-  donation: Donation; donor: User; onBack: () => void; onSubmitRequest: any; currentUserId: number; requests: PickupRequest[]; locationFallback?: boolean;
+function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUserId, requests, reviews, locationFallback }: {
+  donation: Donation; donor: User; onBack: () => void; onSubmitRequest: any; currentUserId: number; requests: PickupRequest[]; reviews: Review[]; locationFallback?: boolean;
 }) {
   const [pickupTime, setPickupTime] = useState('');
   const [notes, setNotes] = useState('');
@@ -1408,6 +1409,8 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
 
   // Find this viewer's request for this specific donation
   const viewerRequest = requests.find(r => r.donationId === donation.id);
+  const donationRequests = requests.filter(r => r.donationId === donation.id);
+  const donationReviews = reviews.filter(r => r.donationId === donation.id);
   const isApprovedRequester = viewerRequest?.status === 'approved' || viewerRequest?.status === 'completed';
   const isPendingRequester  = viewerRequest?.status === 'pending';
 
@@ -1424,6 +1427,36 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
   const showAreaMap = hasAreaCoords && (!canSeeAddress || !hasExactCoords);
   const isVerifiedArea = donation.areaRadiusMeters != null;
   const revealedButNoExact = canSeeAddress && !hasExactCoords;
+  const hasRequested = !!viewerRequest || donationRequests.length > 0 || donation.status === 'reserved' || donation.status === 'picked_up';
+  const hasApproved = donationRequests.some(r => r.status === 'approved' || r.status === 'completed') || donation.status === 'reserved' || donation.status === 'picked_up';
+  const hasPickedUp = donation.status === 'picked_up' || donationRequests.some(r => r.status === 'completed');
+  const hasReviewed = donationReviews.length > 0;
+  const activeLifecycleIndex = hasReviewed ? 4 : hasPickedUp ? 3 : hasApproved ? 2 : hasRequested ? 1 : 0;
+  const lifecycleItems = [
+    { label: 'Available', complete: activeLifecycleIndex > 0, active: activeLifecycleIndex === 0 },
+    { label: 'Requested', complete: activeLifecycleIndex > 1, active: activeLifecycleIndex === 1 },
+    { label: 'Approved', complete: activeLifecycleIndex > 2, active: activeLifecycleIndex === 2 },
+    { label: 'Picked up', complete: activeLifecycleIndex > 3, active: activeLifecycleIndex === 3 },
+    { label: 'Reviewed', complete: hasReviewed, active: activeLifecycleIndex === 4 },
+  ];
+  const nextMessage = hasReviewed
+    ? 'Thanks for helping the community reduce waste.'
+    : hasPickedUp
+      ? 'You can leave a review after pickup is complete.'
+      : isApprovedRequester
+        ? 'Pickup details are unlocked.'
+        : isPendingRequester
+          ? 'Your request is waiting for approval.'
+          : donation.status === 'available'
+            ? 'Send a request and wait for donor approval.'
+            : 'This donation is no longer open for new pickup requests.';
+  const privacyTitle = canSeeAddress
+    ? 'Exact pickup details unlocked'
+    : 'General area only';
+  const privacyCopy = canSeeAddress
+    ? 'The exact pickup address is available for this approved pickup. Handle it with care.'
+    : 'Exact pickup details are revealed only after the donor approves a request.';
+  const primaryReview = donationReviews[0];
 
   return (
     <div>
@@ -1432,6 +1465,23 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
         <span>/</span>
         <span className="breadcrumb-current">Donation Details</span>
       </div>
+      <motion.div
+        className="details-lifecycle"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+        aria-label="Donation lifecycle"
+      >
+        {lifecycleItems.map((item, index) => (
+          <div
+            key={item.label}
+            className={`details-lifecycle-step ${item.complete ? 'is-complete' : ''} ${item.active ? 'is-active' : ''}`}
+          >
+            <span className="details-lifecycle-dot">{item.complete ? '✓' : index + 1}</span>
+            <span className="details-lifecycle-label">{item.label}</span>
+          </div>
+        ))}
+      </motion.div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <div>
           <div className="card-image-large mb-6">
@@ -1440,10 +1490,23 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
               <StatusBadge status={donation.status} />
             </div>
           </div>
-          <div className="card p-6">
+          <motion.div
+            className="card details-overview-card p-6"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.36, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+          >
             <div className="mb-4">
               <div className="eyebrow mb-1">{donation.foodType}</div>
               <h1 className="details-title">{donation.title}</h1>
+              <div className="details-chip-row mt-4">
+                <span className="info-pill"><span className="info-pill-label">Qty</span><span className="info-pill-value">{donation.quantity}</span></span>
+                <span className="info-pill"><span className="info-pill-label">City</span><span className="info-pill-value">{donation.city}</span></span>
+                <span className="info-pill"><span className="info-pill-label">Expires</span><span className="info-pill-value">{formatDateTime(donation.expiryDate)}</span></span>
+                {'distanceKm' in donation && typeof (donation as DonationWithDistance).distanceKm === 'number' && (
+                  <span className="info-pill"><span className="info-pill-label">Distance</span><span className="info-pill-value">{(donation as DonationWithDistance).distanceKm!.toFixed(1)} km</span></span>
+                )}
+              </div>
             </div>
             <div className="space-y-4 mb-6">
               <div><div className="detail-label">Description</div><div className="detail-value">{donation.description}</div></div>
@@ -1457,6 +1520,15 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
               )}
               <div>
                 <div className="detail-label">Pickup Location</div>
+                <div className={`details-privacy-state ${canSeeAddress ? 'is-unlocked' : ''}`}>
+                  <div>
+                    <div className="details-privacy-title">{privacyTitle}</div>
+                    <div className="details-privacy-copy">{privacyCopy}</div>
+                  </div>
+                  <div className="details-privacy-meta">
+                    {canSeeAddress ? 'Exact address visible' : 'Exact address hidden'}
+                  </div>
+                </div>
                 <div className="flex items-start gap-2 mb-3">
                   <span className="text-lg" aria-hidden="true">📍</span>
                   <div>
@@ -1527,7 +1599,7 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
             </div>
             <div className="donor-section">
               <div className="detail-label mb-3">Donor</div>
-              <div className="flex items-center gap-4">
+              <div className="details-donor-card">
                 <div className="donor-avatar">👤</div>
                 <div className="flex-1">
                   <div className="donor-name">{donor.displayName}</div>
@@ -1539,9 +1611,18 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
-        <div>
+        <div className="details-side-stack">
+          <motion.div
+            className="details-next-card"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.36, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="details-next-kicker">What happens next</div>
+            <div className="details-next-copy">{nextMessage}</div>
+          </motion.div>
           {isOwnDonation ? (
             /* ── Donor: viewing their own listing ── */
             <div className="card p-8 text-center">
@@ -1658,6 +1739,21 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
                 </div>
               </div>
             </div>
+          )}
+          {primaryReview && (
+            <motion.div
+              className="details-review-card"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.36, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="details-next-kicker">Community trust</div>
+              <div className="details-review-rating">{'★'.repeat(primaryReview.rating)}{'☆'.repeat(Math.max(0, 5 - primaryReview.rating))}</div>
+              {primaryReview.comment && (
+                <div className="details-review-copy">“{primaryReview.comment}”</div>
+              )}
+              <div className="details-review-meta">Review submitted after pickup</div>
+            </motion.div>
           )}
         </div>
       </div>
