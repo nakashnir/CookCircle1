@@ -901,6 +901,269 @@
     color: #6b7d6e;
   }
 
+  /* ---- Create donation guided flow ---- */
+  .create-stepper {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin: -6px 0 24px;
+    padding: 10px;
+    list-style: none;
+    background: rgba(255, 255, 255, 0.66);
+    border: 1px solid rgba(28, 53, 32, 0.09);
+    border-radius: 18px;
+    box-shadow: 0 1px 2px rgba(28, 53, 32, 0.04), 0 14px 32px -24px rgba(28, 53, 32, 0.22);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .create-stepper-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 13px;
+    color: #6b7d6e;
+    background: transparent;
+    transition: background .16s ease, color .16s ease, box-shadow .16s ease;
+  }
+
+  .create-stepper-item.is-active {
+    color: #152818;
+    background: linear-gradient(135deg, #fdfbf6 0%, #faf5ec 100%);
+    box-shadow: inset 0 0 0 1px rgba(28, 53, 32, 0.08);
+  }
+
+  .create-stepper-item.is-complete {
+    color: #3f6a44;
+  }
+
+  .create-stepper-number {
+    width: 26px;
+    height: 26px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    background: #f1f6f1;
+    border: 1px solid rgba(63, 106, 68, 0.16);
+    color: #3f6a44;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .create-stepper-item.is-active .create-stepper-number {
+    color: #fff;
+    background: linear-gradient(180deg, #3f6a44 0%, #244429 100%);
+    border-color: rgba(28, 53, 32, 0.18);
+    box-shadow: 0 6px 14px -8px rgba(36, 68, 41, 0.55);
+  }
+
+  .create-stepper-label {
+    min-width: 0;
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .create-form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.22fr) minmax(320px, 0.78fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .create-form-main,
+  .create-form-side {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+  }
+
+  .create-form-side {
+    position: sticky;
+    top: 108px;
+  }
+
+  .create-section-card,
+  .create-publish-card {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(253, 251, 246, 0.82) 100%);
+    border: 1px solid rgba(28, 53, 32, 0.09);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 1px 2px rgba(28, 53, 32, 0.04), 0 12px 30px -22px rgba(28, 53, 32, 0.22);
+  }
+
+  .create-section-header {
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .create-section-header .form-section-hint {
+    margin-left: auto;
+    margin-top: 3px;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    background: #f1f6f1;
+    color: #3f6a44;
+    border: 1px solid rgba(63, 106, 68, 0.12);
+    white-space: nowrap;
+  }
+
+  .create-section-kicker {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    background: rgba(238, 156, 90, 0.14);
+    border: 1px solid rgba(224, 122, 60, 0.20);
+    color: #c95f28;
+    font-weight: 800;
+    font-size: 12px;
+  }
+
+  .create-section-helper {
+    margin: 4px 0 0;
+    color: #6b7d6e;
+    font-size: 13px;
+    line-height: 1.45;
+    max-width: 58ch;
+  }
+
+  .create-photo-card {
+    background:
+      radial-gradient(360px 180px at 100% 0%, rgba(238, 156, 90, 0.12), transparent 65%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(253, 251, 246, 0.84) 100%);
+  }
+
+  .create-upload-area {
+    min-height: 210px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+  }
+
+  .create-upload-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 12px;
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f1f6f1 0%, #faf5ec 100%);
+    border: 1px solid rgba(28, 53, 32, 0.10);
+    font-size: 28px;
+    box-shadow: 0 8px 22px -18px rgba(28, 53, 32, 0.36);
+  }
+
+  .create-upload-preview-frame {
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(28, 53, 32, 0.10);
+    background: #fdfbf6;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+  }
+
+  .create-upload-preview {
+    width: 100%;
+    max-height: 240px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .create-privacy-card {
+    background:
+      linear-gradient(135deg, rgba(241, 246, 241, 0.96) 0%, rgba(250, 245, 236, 0.96) 100%);
+    border-color: rgba(63, 106, 68, 0.18);
+  }
+
+  .create-publish-card {
+    background:
+      radial-gradient(260px 160px at 100% 0%, rgba(63, 106, 68, 0.10), transparent 70%),
+      linear-gradient(145deg, #fdfbf6 0%, #faf5ec 100%);
+  }
+
+  .create-publish-copy {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .create-publish-reassurance {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(63, 106, 68, 0.08);
+    color: #3f6a44;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .create-publish-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  @media (max-width: 1024px) {
+    .create-form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .create-form-side {
+      position: static;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .create-stepper {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 8px;
+    }
+
+    .create-stepper-item {
+      padding: 9px 10px;
+      gap: 8px;
+    }
+
+    .create-section-card,
+    .create-publish-card {
+      padding: 18px;
+      border-radius: 18px;
+    }
+
+    .create-section-header {
+      flex-wrap: wrap;
+    }
+
+    .create-section-header .form-section-hint {
+      margin-left: 0;
+    }
+
+    .create-upload-area {
+      min-height: 170px;
+    }
+
+    .create-publish-actions {
+      flex-direction: column;
+    }
+  }
+
   /* ---- FloatingFoodHero ---- */
   .ffc-hero {
     display: none;

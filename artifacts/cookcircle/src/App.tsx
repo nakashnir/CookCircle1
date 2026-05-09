@@ -1674,6 +1674,41 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
+const CREATE_DONATION_STEPS = [
+  'Food details',
+  'Photo',
+  'Pickup & Privacy',
+  'Review & Publish',
+];
+
+function CreateDonationStepper({ currentStep = 1 }: { currentStep?: number }) {
+  return (
+    <motion.ol
+      className="create-stepper"
+      aria-label="Create donation publishing steps"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {CREATE_DONATION_STEPS.map((label, index) => {
+        const stepNumber = index + 1;
+        const isActive = stepNumber === currentStep;
+        const isComplete = stepNumber < currentStep;
+        return (
+          <li
+            key={label}
+            className={`create-stepper-item ${isActive ? 'is-active' : ''} ${isComplete ? 'is-complete' : ''}`}
+            aria-current={isActive ? 'step' : undefined}
+          >
+            <span className="create-stepper-number">{stepNumber}</span>
+            <span className="create-stepper-label">{label}</span>
+          </li>
+        );
+      })}
+    </motion.ol>
+  );
+}
+
 function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: any }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -1741,6 +1776,7 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
           <h1 className="page-title">Verify pickup spot.</h1>
           <p className="page-subtitle">Requesters see only the approximate neighborhood. Exact address is revealed to approved recipients only.</p>
         </div>
+        <CreateDonationStepper currentStep={4} />
         <LocationConfirmStep
           street={street} houseNumber={houseNumber} city={city} pickupNotes={pickupNotes}
           geoPreview={geoPreview}
@@ -1760,10 +1796,22 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
         <h1 className="page-title">Share surplus food.</h1>
         <p className="page-subtitle">A few details and your neighbors can reserve it within minutes.</p>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-        <div className="card p-6 space-y-6">
-          <div>
-            <div className="form-section-header"><span className="form-section-title">About the food</span></div>
+      <CreateDonationStepper currentStep={1} />
+      <div className="create-form-grid">
+        <div className="create-form-main">
+          <motion.section
+            className="create-section-card"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.36, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="form-section-header create-section-header">
+              <span className="create-section-kicker">1</span>
+              <div>
+                <span className="form-section-title">About the food</span>
+                <p className="create-section-helper">Give neighbors enough detail to understand what is available and when it should be picked up.</p>
+              </div>
+            </div>
             <div className="space-y-4">
               <div>
                 <label htmlFor="cd-title" className="form-label">Donation Title <span className="text-red-600" aria-hidden>*</span></label>
@@ -1791,9 +1839,22 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
                 </div>
               </div>
             </div>
-          </div>
-          <div className="border-t border-zinc-100 pt-5">
-            <div className="form-section-header"><span className="form-section-title">Dietary information</span><span className="form-section-hint">Optional</span></div>
+          </motion.section>
+
+          <motion.section
+            className="create-section-card"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.36, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="form-section-header create-section-header">
+              <span className="create-section-kicker">2</span>
+              <div>
+                <span className="form-section-title">Dietary information</span>
+                <p className="create-section-helper">Optional tags help people quickly find food that fits their household.</p>
+              </div>
+              <span className="form-section-hint">Optional</span>
+            </div>
             <fieldset>
               <legend className="sr-only">Dietary tags</legend>
               <div className="grid grid-cols-2 gap-3">
@@ -1805,9 +1866,21 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
                 ))}
               </div>
             </fieldset>
-          </div>
-          <div className="border-t border-zinc-100 pt-5">
-            <div className="form-section-header"><span className="form-section-title">Pickup location</span></div>
+          </motion.section>
+
+          <motion.section
+            className="create-section-card"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.36, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="form-section-header create-section-header">
+              <span className="create-section-kicker">3</span>
+              <div>
+                <span className="form-section-title">Pickup details</span>
+                <p className="create-section-helper">Confirm the pickup area now. Exact address details stay private until you approve a request.</p>
+              </div>
+            </div>
             <div className="space-y-4">
               <div>
                 <label htmlFor="cd-city" className="form-label">City <span className="text-red-600" aria-hidden>*</span></label>
@@ -1853,17 +1926,31 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
                 <input id="cd-pickup-notes" type="text" placeholder="e.g., Ring bell 2B, leave at door…" value={pickupNotes} onChange={(e) => setPickupNotes(e.target.value)} className="input-field" />
               </div>
             </div>
-          </div>
+          </motion.section>
         </div>
-        <div className="space-y-6">
-          <div className="card p-6">
-            <div className="form-section-header mb-3"><span className="form-section-title">Photo</span><span className="form-section-hint">Optional</span></div>
-            <label htmlFor="cd-image" className="upload-area cursor-pointer block" aria-label="Upload food photo">
+        <div className="create-form-side">
+          <motion.section
+            className="create-section-card create-photo-card"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.36, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="form-section-header create-section-header mb-3">
+              <span className="create-section-kicker">2</span>
+              <div>
+                <span className="form-section-title">Photo</span>
+                <p className="create-section-helper">Add a clear photo so neighbors can quickly understand what you’re sharing.</p>
+              </div>
+              <span className="form-section-hint">Optional</span>
+            </div>
+            <label htmlFor="cd-image" className="upload-area create-upload-area cursor-pointer block" aria-label="Upload food photo">
               {imageData ? (
-                <img src={imageData} alt="Preview of selected image" className="max-h-48 mx-auto rounded" />
+                <span className="create-upload-preview-frame">
+                  <img src={imageData} alt="Preview of selected image" className="create-upload-preview" />
+                </span>
               ) : (
                 <>
-                  <span className="text-6xl mb-3 block text-center" aria-hidden>📷</span>
+                  <span className="create-upload-icon" aria-hidden>📷</span>
                   <div className="upload-text text-center">Click to upload a photo</div>
                   <div className="upload-hint text-center">PNG or JPG · max 4 MB</div>
                 </>
@@ -1874,29 +1961,57 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
               <button type="button" onClick={() => setImageData(null)} className="mt-3 text-xs text-red-600 underline">Remove photo</button>
             )}
             {imageError && <div className="mt-2 text-xs text-red-600" role="alert">{imageError}</div>}
-          </div>
-          <div className="card p-6">
-            <div className="form-section-header mb-3"><span className="form-section-title">Privacy</span></div>
-            <div className="privacy-option mb-3">
-              <div className="privacy-label">🔒 Address always protected</div>
-              <div className="privacy-desc mt-1">Only the approximate neighborhood is shown publicly. Exact address and pickup notes are revealed only to recipients you approve.</div>
+          </motion.section>
+
+          <motion.section
+            className="create-section-card"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.36, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="form-section-header create-section-header mb-3">
+              <span className="create-section-kicker">3</span>
+              <div>
+                <span className="form-section-title">Privacy & approval</span>
+                <p className="create-section-helper">CookCircle keeps the sensitive handoff details behind donor approval.</p>
+              </div>
+            </div>
+            <div className="privacy-option create-privacy-card mb-3">
+              <div className="privacy-label">🔒 Your exact pickup address stays private until you approve a request.</div>
+              <div className="privacy-desc mt-1">Recipients first see only the general area.</div>
             </div>
             <label className="privacy-option flex items-start gap-3 cursor-pointer">
               <input type="checkbox" checked={allowDiscreet} onChange={(e) => setAllowDiscreet(e.target.checked)} className="mt-1 w-4 h-4 flex-shrink-0" />
               <div><div className="privacy-label">Allow discreet pickup requests</div><div className="privacy-desc">Recipients can request private pickup instructions, useful for sensitive situations.</div></div>
             </label>
-          </div>
+          </motion.section>
+
           {geoError && (
             <div className="rounded-xl px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm" role="alert">
               {geoError}
             </div>
           )}
-          <div className="flex gap-4">
-            <button onClick={onBack} className="btn-secondary flex-1">Cancel</button>
-            <button onClick={handleCheckLocation} disabled={geoLoading} className="btn-primary flex-1">
-              {geoLoading ? 'Checking location…' : 'Check Location'}
-            </button>
-          </div>
+          <motion.div
+            className="create-publish-card"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.36, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="create-publish-copy">
+              <span className="create-section-kicker">4</span>
+              <div>
+                <div className="form-section-title">Review & publish</div>
+                <p className="create-section-helper">Review your details, then publish your donation to the community.</p>
+              </div>
+            </div>
+            <div className="create-publish-reassurance">Exact pickup details are shared only after approval.</div>
+            <div className="create-publish-actions">
+              <button onClick={onBack} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={handleCheckLocation} disabled={geoLoading} className="btn-primary flex-1">
+                {geoLoading ? 'Checking location…' : 'Check Location'}
+              </button>
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>
