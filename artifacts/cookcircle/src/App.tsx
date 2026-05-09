@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { FloatingFoodHero } from './components/FloatingFoodHero';
 import {
   api,
   type DietaryTag,
@@ -447,59 +448,8 @@ function AuthScreen({ onLogin }: { onLogin: (user: User) => void }) {
 
   return (
     <div className="app-background auth-shell">
-      {/* ── Left hero panel (desktop only) ── */}
-      <div className="auth-hero-panel">
-        {/* Decorative blobs */}
-        <div className="hero-panel-bg-blob" style={{ width: 320, height: 320, background: 'radial-gradient(circle, rgba(238,156,90,0.22) 0%, transparent 70%)', top: '8%', right: '-60px' }} />
-        <div className="hero-panel-bg-blob" style={{ width: 260, height: 260, background: 'radial-gradient(circle, rgba(143,176,145,0.22) 0%, transparent 70%)', bottom: '12%', left: '-40px' }} />
-
-        {/* Brand */}
-        <div className="flex items-center gap-3 mb-10">
-          <span className="brand-logo" style={{ width: 44, height: 44, fontSize: 22 }}>🌿</span>
-          <span className="brand-wordmark" style={{ fontSize: 26 }}>CookCircle</span>
-        </div>
-
-        {/* Headline */}
-        <div className="eyebrow mb-3">Community food sharing</div>
-        <h1 className="page-title mb-4" style={{ fontSize: 42, lineHeight: 1.08 }}>
-          Good food,<br />shared with care.
-        </h1>
-        <p className="page-subtitle mb-10" style={{ maxWidth: 360 }}>
-          CookCircle connects neighbors who have surplus food with those who can use it — privately, safely, and with trust at every step.
-        </p>
-
-        {/* Feature pills */}
-        <div className="flex flex-col gap-3 mb-10" style={{ maxWidth: 380 }}>
-          <div className="auth-feature-pill">
-            <span className="auth-feature-icon">🥗</span>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#152818' }}>Share surplus food</div>
-              <div style={{ fontSize: 12, color: '#6b7d6e', marginTop: 1 }}>Post meals, produce & pantry items in seconds</div>
-            </div>
-          </div>
-          <div className="auth-feature-pill">
-            <span className="auth-feature-icon">🤝</span>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#152818' }}>Discreet, private pickup</div>
-              <div style={{ fontSize: 12, color: '#6b7d6e', marginTop: 1 }}>Exact address revealed only to approved recipients</div>
-            </div>
-          </div>
-          <div className="auth-feature-pill">
-            <span className="auth-feature-icon">⭐</span>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#152818' }}>Build community trust</div>
-              <div style={{ fontSize: 12, color: '#6b7d6e', marginTop: 1 }}>Ratings and reviews after every successful pickup</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Trust chips */}
-        <div className="flex flex-wrap gap-2">
-          <span className="trust-chip">🔒 Privacy-first</span>
-          <span className="trust-chip">📍 Israel-wide</span>
-          <span className="trust-chip">♻️ Reduce food waste</span>
-        </div>
-      </div>
+      {/* ── Left hero panel (desktop only) — Motion floating food hero ── */}
+      <FloatingFoodHero />
 
       {/* ── Right form panel ── */}
       <div className="auth-form-panel">

@@ -826,6 +826,54 @@
     color: #6b7d6e;
   }
 
+  /* ---- FloatingFoodHero ---- */
+  .ffc-hero {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 56px 64px;
+    background:
+      radial-gradient(800px 500px at 80% 10%, rgba(238,156,90,0.13), transparent 60%),
+      radial-gradient(600px 400px at -10% 80%, rgba(143,176,145,0.18), transparent 60%),
+      linear-gradient(160deg, #fdfbf6 0%, #f3ead8 100%);
+    border-right: 1px solid rgba(28,53,32,0.08);
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  @media (min-width: 1024px) {
+    .ffc-hero { display: flex; }
+  }
+
+  .ffc-content { position: relative; z-index: 1; }
+
+  .ffc-bg-blob {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .ffc-floater {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.75) 0%, rgba(245,238,224,0.55) 100%);
+    border: 1px solid rgba(255,255,255,0.65);
+    box-shadow: 0 4px 20px rgba(28,53,32,0.08), inset 0 1px 0 rgba(255,255,255,0.55);
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    line-height: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ffc-floater { animation: none !important; }
+  }
+
   /* ---- Auth landing shell ---- */
   .auth-shell {
     min-height: 100vh;
