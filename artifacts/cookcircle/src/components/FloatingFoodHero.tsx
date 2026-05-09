@@ -1,11 +1,11 @@
 import { motion } from 'motion/react';
 
 const FLOATERS = [
-  { emoji: '🥗', size: 76, top: '9%',  left: '6%',   duration: 5.6, delay: 0.0, rotDir: 1  },
-  { emoji: '🍲', size: 60, top: '64%', left: '4%',   duration: 6.3, delay: 0.9, rotDir: -1 },
+  { emoji: '🥗', size: 76, top: '9%',  left: '-1%',  duration: 5.6, delay: 0.0, rotDir: 1  },
+  { emoji: '🍲', size: 60, top: '64%', left: '-2%',  duration: 6.3, delay: 0.9, rotDir: -1 },
   { emoji: '🥐', size: 68, top: '22%', right: '5%',  duration: 5.9, delay: 0.4, rotDir: 1  },
   { emoji: '🧀', size: 54, top: '70%', right: '8%',  duration: 7.1, delay: 1.3, rotDir: -1 },
-  { emoji: '🥕', size: 46, top: '46%', left: '2%',   duration: 6.6, delay: 0.7, rotDir: 1  },
+  { emoji: '🥕', size: 46, top: '46%', left: '-3%',  duration: 6.6, delay: 0.7, rotDir: 1  },
   { emoji: '🍓', size: 50, top: '15%', right: '16%', duration: 5.3, delay: 1.1, rotDir: -1 },
 ] as const;
 

@@ -831,7 +831,7 @@
     display: none;
     flex-direction: column;
     justify-content: center;
-    padding: 56px 64px;
+    padding: 56px 64px 56px 96px;
     background:
       radial-gradient(800px 500px at 80% 10%, rgba(238,156,90,0.13), transparent 60%),
       radial-gradient(600px 400px at -10% 80%, rgba(143,176,145,0.18), transparent 60%),
