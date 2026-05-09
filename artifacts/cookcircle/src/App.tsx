@@ -982,7 +982,16 @@ export default function App() {
             />
           );
         })()}
-        {currentScreen === 'profile' && <Profile user={currentUser} onBack={() => setCurrentScreen('feed')} onSave={saveProfile} />}
+        {currentScreen === 'profile' && (
+          <Profile
+            user={currentUser}
+            donations={allDonations}
+            requests={requests}
+            reviews={reviews}
+            onBack={() => setCurrentScreen('feed')}
+            onSave={saveProfile}
+          />
+        )}
       </main>
     </div>
   );
@@ -2809,58 +2818,186 @@ function ReviewRating({ request, donation, donor, onBack, onSubmit }: any) {
   );
 }
 
-function Profile({ user, onBack, onSave }: { user: User; onBack: () => void; onSave: (patch: Partial<Pick<User, 'displayName' | 'email' | 'phone' | 'dietaryPreferences' | 'discreetPickup'>>) => void }) {
+function profileInitials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'CC';
+}
+
+function estimateProfileFoodSavedKg(donations: Donation[]): number {
+  return donations.reduce((total, donation) => {
+    const quantity = String(donation.quantity || '').toLowerCase();
+    const numeric = Number(quantity.match(/[\d.]+/)?.[0] || 0);
+    if (quantity.includes('kg') && numeric) return total + numeric;
+    if ((quantity.includes('portion') || quantity.includes('serving')) && numeric) return total + numeric * 0.45;
+    if (numeric && (donation.status === 'picked_up' || donation.status === 'reserved')) return total + Math.min(numeric * 0.45, numeric);
+    if (donation.status === 'picked_up') return total + 0.5;
+    return total;
+  }, 0);
+}
+
+function Profile({ user, donations = [], requests = [], reviews = [], onBack, onSave }: {
+  user: User;
+  donations?: Donation[];
+  requests?: PickupRequest[];
+  reviews?: Review[];
+  onBack: () => void;
+  onSave: (patch: Partial<Pick<User, 'displayName' | 'email' | 'phone' | 'dietaryPreferences' | 'discreetPickup'>>) => void;
+}) {
   const [displayName, setDisplayName] = useState(user.displayName);
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone);
   const [dietaryPreferences, setDietaryPreferences] = useState<DietaryTag[]>(user.dietaryPreferences);
   const [discreetPickup, setDiscreetPickup] = useState(user.discreetPickup);
+  const userDonations = donations.filter((donation) => donation.donorId === user.id);
+  const userDonationIds = new Set(userDonations.map((donation) => donation.id));
+  const completedPickups = requests.filter((request) =>
+    request.status === 'completed' && (request.requesterId === user.id || userDonationIds.has(request.donationId))
+  ).length;
+  const reviewsReceived = reviews.filter((review) =>
+    review.revieweeId === user.id || userDonationIds.has(review.donationId)
+  ).length || user.reviewCount || 0;
+  const citiesReached = new Set(
+    userDonations
+      .map((donation) => donation.city || donation.areaLabel)
+      .filter(Boolean)
+  ).size;
+  const foodSavedKg = estimateProfileFoodSavedKg(userDonations);
+  const averageRating = user.rating || 0;
+  const trustLabel = averageRating >= 4.7 && reviewsReceived > 0 ? 'Trusted neighbor' : reviewsReceived > 0 ? 'Community member' : 'Getting started';
+  const impactStats = [
+    { label: 'Donations shared', value: userDonations.length, tone: 'forest' },
+    { label: 'Pickups completed', value: completedPickups, tone: 'ember' },
+    { label: 'Reviews received', value: reviewsReceived, tone: 'forest' },
+    { label: 'Average rating', value: averageRating ? averageRating.toFixed(1) : 'New', tone: 'cream' },
+    { label: 'Cities reached', value: citiesReached, tone: 'forest' },
+    { label: 'Kg saved est.', value: foodSavedKg ? foodSavedKg.toFixed(1) : '0', tone: 'ember' },
+  ];
 
   return (
-    <div>
-      <div className="mb-8">
+    <div className="profile-page">
+      <div className="dashboard-hero mb-6">
         <div className="eyebrow mb-2">Your account</div>
         <h1 className="page-title">Profile & preferences</h1>
         <p className="page-subtitle">Manage how the community sees and reaches you.</p>
       </div>
-      <div className="max-w-2xl">
-        <div className="profile-reputation">
-          <div className="flex items-center gap-5">
-            <div className="donor-avatar-large">👤</div>
-            <div className="flex-1">
-              <div className="eyebrow mb-1">Community reputation</div>
-              <div className="donor-name text-xl">{user.displayName}</div>
-              <div className="flex items-center gap-1 text-sm mt-1">
-                {[...Array(5)].map((_, i) => <span key={i} className={i < Math.floor(user.rating) ? 'star-filled' : 'star-empty'}>⭐</span>)}
-                <span className="rating-value ml-2">{user.rating.toFixed(1)}</span>
-                <span className="rating-count">({user.reviewCount} reviews)</span>
+
+      <div className="profile-layout">
+        <motion.div
+          className="profile-main-column"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="profile-form-card">
+            <div className="form-section-header">
+              <div>
+                <h2 className="form-section-title">Personal information</h2>
+                <p className="form-section-hint">Keep your contact details current for approved pickup coordination.</p>
               </div>
             </div>
+            <div className="profile-field-grid">
+              <div><label htmlFor="profile-name" className="form-label mb-2">Display Name</label><input id="profile-name" type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="input-field" /></div>
+              <div><label htmlFor="profile-email" className="form-label mb-2">Email</label><input id="profile-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" /></div>
+              <div><label htmlFor="profile-phone" className="form-label mb-2">Phone</label><input id="profile-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="input-field" /></div>
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-3 mt-5">
-            <div className="stat-tile"><div className="stat-value">{user.rating.toFixed(1)}</div><div className="stat-label">Rating</div></div>
-            <div className="stat-tile"><div className="stat-value">{user.reviewCount}</div><div className="stat-label">Reviews</div></div>
-            <div className="stat-tile"><div className="stat-value">{user.dietaryPreferences.length || '—'}</div><div className="stat-label">Dietary Tags</div></div>
+
+          <div className="profile-form-card">
+            <div className="form-section-header">
+              <div>
+                <h2 className="form-section-title">Dietary preferences</h2>
+                <p className="form-section-hint">These help highlight food that fits your household.</p>
+              </div>
+            </div>
+            <fieldset>
+              <legend className="sr-only">Dietary preferences</legend>
+              <div className="profile-check-grid">
+                {(['vegan', 'vegetarian', 'gluten_free', 'kosher'] as DietaryTag[]).map((tag) => (
+                  <label key={tag} className="check-row">
+                    <input type="checkbox" checked={dietaryPreferences.includes(tag)} onChange={() => setDietaryPreferences(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])} className="w-4 h-4" />
+                    <span className="form-checkbox-label">{tag === 'gluten_free' ? 'Gluten-Free' : tag.charAt(0).toUpperCase() + tag.slice(1)}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           </div>
-        </div>
-        <div className="card p-6 mb-6">
-          <h2 className="section-title mb-4">Personal information</h2>
-          <div className="space-y-4">
-            <div><label htmlFor="profile-name" className="form-label mb-2">Display Name</label><input id="profile-name" type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="input-field" /></div>
-            <div><label htmlFor="profile-email" className="form-label mb-2">Email</label><input id="profile-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" /></div>
-            <div><label htmlFor="profile-phone" className="form-label mb-2">Phone</label><input id="profile-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="input-field" /></div>
+
+          <div className="profile-form-card">
+            <div className="form-section-header">
+              <div>
+                <h2 className="form-section-title">Privacy settings</h2>
+                <p className="form-section-hint">Choose the pickup style you prefer when requesting food.</p>
+              </div>
+            </div>
+            <label className="profile-privacy-toggle"><input type="checkbox" checked={discreetPickup} onChange={(e) => setDiscreetPickup(e.target.checked)} className="mt-1 w-4 h-4" /><div><div className="privacy-label">Prefer discreet pickups</div><div className="privacy-desc mt-1">When enabled, your pickup requests will default to discreet mode.</div></div></label>
           </div>
-        </div>
-        <div className="card p-6 mb-6">
-          <h2 className="section-title mb-4">Dietary preferences</h2>
-          <fieldset>
-            <legend className="sr-only">Dietary preferences</legend>
-            <div className="grid grid-cols-2 gap-3">{(['vegan', 'vegetarian', 'gluten_free', 'kosher'] as DietaryTag[]).map((tag) => (<label key={tag} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={dietaryPreferences.includes(tag)} onChange={() => setDietaryPreferences(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])} className="w-4 h-4" /><span className="form-checkbox-label">{tag === 'gluten_free' ? 'Gluten-Free' : tag.charAt(0).toUpperCase() + tag.slice(1)}</span></label>))}</div>
-          </fieldset>
-        </div>
-        <div className="card p-6 mb-6"><h2 className="section-title mb-4">Privacy settings</h2><label className="flex items-start gap-3 cursor-pointer"><input type="checkbox" checked={discreetPickup} onChange={(e) => setDiscreetPickup(e.target.checked)} className="mt-1 w-4 h-4" /><div><div className="privacy-label">Prefer discreet pickups</div><div className="privacy-desc mt-1">When enabled, your pickup requests will default to discreet mode</div></div></label></div>
-        <div className="flex gap-4"><button onClick={onBack} className="btn-secondary flex-1">Cancel</button><button onClick={() => onSave({ displayName, email, phone, dietaryPreferences, discreetPickup })} className="btn-primary flex-1">Save changes</button></div>
+
+          <div className="profile-save-bar">
+            <div>
+              <div className="profile-save-title">Ready to update?</div>
+              <div className="profile-save-copy">Your profile changes apply to future community interactions.</div>
+            </div>
+            <div className="profile-save-actions"><button onClick={onBack} className="btn-secondary">Cancel</button><button onClick={() => onSave({ displayName, email, phone, dietaryPreferences, discreetPickup })} className="btn-primary">Save changes</button></div>
+          </div>
+        </motion.div>
+
+        <motion.aside
+          className="profile-side-column"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.34, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="profile-trust-card">
+            <div className="profile-avatar">{profileInitials(user.displayName)}</div>
+            <div className="eyebrow mb-1">Community reputation</div>
+            <h2 className="profile-trust-name">{user.displayName}</h2>
+            <div className="profile-trust-email">{user.email}</div>
+            <div className="profile-rating-row">
+              {[...Array(5)].map((_, i) => <span key={i} className={i < Math.round(averageRating) ? 'star-filled' : 'star-empty'}>*</span>)}
+              <span className="rating-value">{averageRating ? averageRating.toFixed(1) : 'New'}</span>
+              <span className="rating-count">({reviewsReceived} reviews)</span>
+            </div>
+            <div className="profile-trust-badge">{trustLabel}</div>
+            <p className="profile-trust-copy">Built from completed pickups and neighbor reviews.</p>
+          </div>
+
+          <div className="profile-impact-card">
+            <div className="form-section-header">
+              <div>
+                <h2 className="form-section-title">Community impact</h2>
+                <p className="form-section-hint">A snapshot of what your CookCircle activity has helped move.</p>
+              </div>
+            </div>
+            <div className="profile-impact-grid">
+              {impactStats.map((item, index) => (
+                <motion.div
+                  key={item.label}
+                  className={`profile-impact-stat tone-${item.tone}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.28, delay: 0.12 + index * 0.04, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <div className="dashboard-stat-value">{item.value}</div>
+                  <div className="dashboard-stat-label">{item.label}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          <div className="profile-safety-card">
+            <div className="profile-safety-icon" aria-hidden="true">i</div>
+            <div>
+              <h2 className="form-section-title">Privacy & safety</h2>
+              <p className="profile-safety-copy">Exact address stays private until approval. Pickup coordination is request-based, reviews build trust after completed pickups, and discreet pickup is supported.</p>
+            </div>
+          </div>
+        </motion.aside>
       </div>
     </div>
   );
+
 }
