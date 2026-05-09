@@ -14,6 +14,22 @@ import {
   type User,
   type HealthStatus,
 } from './lib/api';
+import {
+  PREVIEW_CURRENT_USER,
+  PREVIEW_DONATIONS,
+  PREVIEW_REQUESTS,
+  PREVIEW_REVIEWS,
+  PREVIEW_USERS,
+} from './previewData';
+
+// ---------------------------------------------------------------------------
+// UI Preview Mode — dev-only visual inspection bypass.
+// Activated only when running the Vite dev server AND the URL has ?uiPreview=1.
+// Never active in production builds (import.meta.env.DEV is false after build).
+// ---------------------------------------------------------------------------
+const IS_UI_PREVIEW =
+  import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).get('uiPreview') === '1';
 
 const ISRAELI_CITIES = [
   'Tel Aviv', 'Jerusalem', 'Haifa', 'Beer Sheva', 'Rishon LeZion',
@@ -635,6 +651,7 @@ export default function App() {
   }, [filterCity, filterDietary, filterStatus, sortMode, origin]);
 
   const loadDonations = useCallback(async () => {
+    if (IS_UI_PREVIEW) return;
     try {
       const d = await api.listDonations(buildDonationOpts());
       setDonations(d);
@@ -645,6 +662,7 @@ export default function App() {
   }, [buildDonationOpts]);
 
   const refreshAll = async () => {
+    if (IS_UI_PREVIEW) return;
     try {
       const [d, mine, r, rv, allUsers, health] = await Promise.all([
         api.listDonations(buildDonationOpts()),
@@ -667,6 +685,16 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (IS_UI_PREVIEW) {
+      setCurrentUser(PREVIEW_CURRENT_USER);
+      setDonations(PREVIEW_DONATIONS);
+      setAllDonations(PREVIEW_DONATIONS);
+      setRequests(PREVIEW_REQUESTS);
+      setReviews(PREVIEW_REVIEWS);
+      setUsers(PREVIEW_USERS);
+      setAuthState('authed');
+      return;
+    }
     api.getCurrentUser()
       .then(user => {
         setCurrentUser(user);
@@ -718,6 +746,10 @@ export default function App() {
   };
 
   const runMutation = async (label: string, op: () => Promise<unknown>, successMsg?: string) => {
+    if (IS_UI_PREVIEW) {
+      showToast('success', `[Preview] ${successMsg ?? label} — not persisted`);
+      return true;
+    }
     setBusy(true);
     try {
       await op();
@@ -838,6 +870,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen app-background">
+      {IS_UI_PREVIEW && (
+        <div className="ui-preview-banner" role="status">
+          🎨 UI Preview Mode — mock data only
+        </div>
+      )}
       <Header
         currentScreen={currentScreen}
         onNavigate={setCurrentScreen}

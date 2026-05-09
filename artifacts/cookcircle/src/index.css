@@ -874,6 +874,20 @@
     .ffc-floater { animation: none !important; }
   }
 
+  /* ---- Dev-only UI Preview Mode banner ---- */
+  .ui-preview-banner {
+    background: #1c3520;
+    color: #d4edda;
+    text-align: center;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
   /* ---- Auth landing shell ---- */
   .auth-shell {
     min-height: 100vh;

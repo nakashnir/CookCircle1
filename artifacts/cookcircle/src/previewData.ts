@@ -1,0 +1,194 @@
+// ---------------------------------------------------------------------------
+// UI Preview Mode — dev-only mock data
+// Only imported/used when ?uiPreview=1 and import.meta.env.DEV is true.
+// ---------------------------------------------------------------------------
+import type { DonationWithDistance, PickupRequest, Review, User } from './lib/api';
+
+const now = new Date();
+const future = (days: number) =>
+  new Date(now.getTime() + days * 86_400_000).toISOString();
+const past = (days: number) =>
+  new Date(now.getTime() - days * 86_400_000).toISOString();
+
+export const PREVIEW_USERS: User[] = [
+  {
+    id: 1,
+    displayName: 'Yael Cohen',
+    email: 'yael@example.co.il',
+    phone: '050-111-2222',
+    dietaryPreferences: ['vegan'],
+    discreetPickup: false,
+    rating: 4.8,
+    reviewCount: 12,
+  },
+  {
+    id: 2,
+    displayName: 'David Levi',
+    email: 'david@example.co.il',
+    phone: '052-333-4444',
+    dietaryPreferences: [],
+    discreetPickup: true,
+    rating: 4.5,
+    reviewCount: 7,
+  },
+];
+
+// David (id=2) is the logged-in viewer in preview mode
+export const PREVIEW_CURRENT_USER: User = PREVIEW_USERS[1];
+
+export const PREVIEW_DONATIONS: DonationWithDistance[] = [
+  {
+    id: 101,
+    donorId: 1,
+    title: 'Homemade lentil soup — 4 portions',
+    description:
+      'Fresh lentil soup made this morning with cumin, turmeric, and lemon. Vegan and gluten-free. Ready for pickup from 5 PM.',
+    foodType: 'Prepared meal',
+    quantity: '4 servings',
+    expiryDate: future(1),
+    dietaryTags: ['vegan', 'gluten_free'],
+    city: 'Tel Aviv',
+    address: 'Rothschild Blvd 22, Tel Aviv',
+    street: 'Rothschild Blvd',
+    houseNumber: '22',
+    pickupNotes: 'Call on arrival, 3rd floor',
+    formattedAddress: 'Rothschild Blvd 22, Tel Aviv',
+    status: 'available',
+    createdAt: past(0.5),
+    allowDiscreet: true,
+    imageUrl: null,
+    areaLatitude: 32.0652,
+    areaLongitude: 34.7749,
+    areaLabel: 'Rothschild area, Tel Aviv',
+    areaRadiusMeters: 500,
+    geocodeStatus: 'ok',
+    geocodePrecision: 'rooftop',
+    geocodeProvider: 'google',
+    locationConfirmed: true,
+    canSeeAddress: false,
+    distanceKm: 1.2,
+  },
+  {
+    id: 102,
+    donorId: 1,
+    title: 'Shabbat challah — 2 fresh loaves',
+    description:
+      'Homemade challah from Friday, still perfectly fresh. Kosher. Glazed with sesame seeds.',
+    foodType: 'Baked goods',
+    quantity: '2 loaves',
+    expiryDate: future(2),
+    dietaryTags: ['kosher'],
+    city: 'Tel Aviv',
+    address: 'Ben Yehuda St 45, Tel Aviv',
+    street: 'Ben Yehuda St',
+    houseNumber: '45',
+    pickupNotes: null,
+    formattedAddress: 'Ben Yehuda St 45, Tel Aviv',
+    status: 'reserved',
+    createdAt: past(1),
+    allowDiscreet: false,
+    imageUrl: null,
+    areaLatitude: 32.0749,
+    areaLongitude: 34.7643,
+    areaLabel: 'City centre, Tel Aviv',
+    areaRadiusMeters: 500,
+    geocodeStatus: 'ok',
+    geocodePrecision: 'interpolated',
+    geocodeProvider: 'google',
+    locationConfirmed: true,
+    canSeeAddress: false,
+    distanceKm: 2.4,
+  },
+  {
+    id: 103,
+    donorId: 1,
+    title: 'Vegan chickpea curry — family pot',
+    description:
+      'Large pot of chickpea and spinach curry with jasmine rice. Enough for 6. No dairy, no meat.',
+    foodType: 'Prepared meal',
+    quantity: '6 servings',
+    expiryDate: future(3),
+    dietaryTags: ['vegan', 'vegetarian'],
+    city: 'Jaffa',
+    address: 'Yefet St 12, Jaffa',
+    street: 'Yefet St',
+    houseNumber: '12',
+    pickupNotes: 'Ring the bell twice',
+    formattedAddress: 'Yefet St 12, Jaffa',
+    status: 'picked_up',
+    createdAt: past(3),
+    allowDiscreet: true,
+    imageUrl:
+      'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=640&q=80',
+    areaLatitude: 32.0472,
+    areaLongitude: 34.7521,
+    areaLabel: 'Old Jaffa area',
+    areaRadiusMeters: 500,
+    geocodeStatus: 'ok',
+    geocodePrecision: 'rooftop',
+    geocodeProvider: 'google',
+    locationConfirmed: true,
+    canSeeAddress: true,
+    latitude: 32.0472,
+    longitude: 34.7521,
+    distanceKm: 4.1,
+  },
+  {
+    id: 104,
+    donorId: 1,
+    title: 'Fresh Israeli salad box',
+    description:
+      'Chopped cucumber, tomatoes, parsley, olive oil, lemon. Israeli-style. Enough for 3. Vegan and naturally gluten-free.',
+    foodType: 'Produce',
+    quantity: '3 portions',
+    expiryDate: future(0.5),
+    dietaryTags: ['vegan', 'vegetarian', 'gluten_free'],
+    city: 'Tel Aviv',
+    address: 'Dizengoff St 87, Tel Aviv',
+    street: 'Dizengoff St',
+    houseNumber: '87',
+    pickupNotes: 'Leave at front door, buzz apartment 4',
+    formattedAddress: 'Dizengoff St 87, Tel Aviv',
+    status: 'available',
+    createdAt: past(0.1),
+    allowDiscreet: true,
+    imageUrl: null,
+    areaLatitude: 32.0793,
+    areaLongitude: 34.7746,
+    areaLabel: 'Dizengoff area, Tel Aviv',
+    areaRadiusMeters: 500,
+    geocodeStatus: 'ok',
+    geocodePrecision: 'rooftop',
+    geocodeProvider: 'google',
+    locationConfirmed: true,
+    canSeeAddress: false,
+    distanceKm: 0.8,
+  },
+];
+
+export const PREVIEW_REQUESTS: PickupRequest[] = [
+  {
+    id: 201,
+    donationId: 101,
+    requesterId: 2,
+    pickupTime: future(0.5),
+    notes: 'I can pick up at 5:30 PM',
+    discreetPickup: false,
+    status: 'pending',
+    createdAt: past(0.1),
+  },
+];
+
+export const PREVIEW_REVIEWS: Review[] = [
+  {
+    id: 301,
+    donationId: 103,
+    requestId: 202,
+    reviewerId: 2,
+    revieweeId: 1,
+    rating: 5,
+    comment:
+      'Delicious curry, super fresh! Yael was so kind and the handoff was seamless.',
+    createdAt: past(2),
+  },
+];
