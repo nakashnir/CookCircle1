@@ -13,6 +13,13 @@ export default defineConfig({
     port,
     strictPort: true,
     allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   preview: {
     host: '0.0.0.0',
