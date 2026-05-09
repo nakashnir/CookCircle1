@@ -1087,6 +1087,40 @@ function EmptyState({ message, title }: { message: string; title?: string }) {
   );
 }
 
+function ProductEmptyState({
+  title,
+  message,
+  action,
+  onAction,
+  icon = '🍽',
+}: {
+  title: string;
+  message: string;
+  action?: string;
+  onAction?: () => void;
+  icon?: string;
+}) {
+  return (
+    <motion.div
+      className="product-empty-state"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <div className="product-empty-icon" aria-hidden="true">{icon}</div>
+      <h3 className="product-empty-title">{title}</h3>
+      <p className="product-empty-copy">{message}</p>
+      {action && (
+        onAction ? (
+          <button type="button" onClick={onAction} className="product-empty-action">{action}</button>
+        ) : (
+          <div className="product-empty-note">{action}</div>
+        )
+      )}
+    </motion.div>
+  );
+}
+
 function expiryHint(iso: string): { label: string; soon: boolean } | null {
   if (!iso) return null;
   const ms = new Date(iso).getTime() - Date.now();
@@ -1251,6 +1285,13 @@ function DonationFeed({
   const visible = donations.filter((d) =>
     !searchQuery || d.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+  const hasFeedFilters = Boolean(searchQuery || filterCity || filterDietary || filterStatus !== 'available');
+  const resetFeedFilters = () => {
+    setSearchQuery('');
+    setFilterCity('');
+    setFilterDietary('');
+    setFilterStatus('available');
+  };
 
   const cities = Array.from(new Set(donations.map(d => d.city)));
 
@@ -1385,9 +1426,12 @@ function DonationFeed({
 
       {/* ── Donation grid ── */}
       {visible.length === 0 ? (
-        <EmptyState
-          title="Nothing here yet"
-          message="No donations match your current filters. Try a different city, dietary tag, or set status to 'Any'."
+        <ProductEmptyState
+          icon="🔍"
+          title={donations.length === 0 ? 'No food shares yet.' : 'No matching food shares yet.'}
+          message={donations.length === 0 ? 'Fresh listings will appear here as neighbors post surplus meals and pantry items.' : 'Try changing your filters or check back soon. Fresh listings move quickly.'}
+          action={hasFeedFilters ? 'Clear filters' : 'Create a donation from the top navigation'}
+          onAction={hasFeedFilters ? resetFeedFilters : undefined}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1763,6 +1807,18 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
                 <div className="details-review-copy">“{primaryReview.comment}”</div>
               )}
               <div className="details-review-meta">Review submitted after pickup</div>
+            </motion.div>
+          )}
+          {!primaryReview && (
+            <motion.div
+              className="details-review-card details-empty-card"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.36, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="details-next-kicker">Community trust</div>
+              <div className="details-empty-title">No reviews yet.</div>
+              <div className="details-review-copy">Reviews appear after completed pickups and help build community trust.</div>
             </motion.div>
           )}
         </div>
@@ -2221,10 +2277,26 @@ function MyDonations({ donations, requests, reviews = [], users, onViewDetails, 
         <p className="page-subtitle">Track your active listings and respond to incoming pickup requests.</p>
       </div>
       <DashboardStatGrid items={donationStats} />
+      {(pendingRequests === 0 || completedPickups === 0) && donations.length > 0 && (
+        <div className="empty-signal-grid">
+          {pendingRequests === 0 && (
+            <div className="empty-signal-card">
+              <div className="empty-signal-title">No pending requests</div>
+              <div className="empty-signal-copy">New pickup requests will appear here when neighbors reserve your food.</div>
+            </div>
+          )}
+          {completedPickups === 0 && (
+            <div className="empty-signal-card">
+              <div className="empty-signal-title">No completed pickups yet</div>
+              <div className="empty-signal-copy">Completed handoffs will build your impact and review history over time.</div>
+            </div>
+          )}
+        </div>
+      )}
       {donations.length === 0 ? (
         <DashboardEmptyState
-          title="No donations yet"
-          message="Share surplus food when you have something fresh to offer."
+          title="You haven’t shared food yet."
+          message="Post a surplus meal or pantry item and let neighbors reserve it safely."
           action="Create a donation from the top navigation."
         />
       ) : (
@@ -2652,6 +2724,22 @@ function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus
         <p className="page-subtitle">Follow your reservations from request to pickup.</p>
       </div>
       <DashboardStatGrid items={requestStats} />
+      {(tabCount('approved') === 0 || tabCount('completed') === 0) && requests.length > 0 && (
+        <div className="empty-signal-grid">
+          {tabCount('approved') === 0 && (
+            <div className="empty-signal-card">
+              <div className="empty-signal-title">No approved pickups yet</div>
+              <div className="empty-signal-copy">Approved requests will unlock pickup details from the donor.</div>
+            </div>
+          )}
+          {tabCount('completed') === 0 && (
+            <div className="empty-signal-card">
+              <div className="empty-signal-title">No completed pickups yet</div>
+              <div className="empty-signal-copy">Completed pickups will appear here once food has been collected.</div>
+            </div>
+          )}
+        </div>
+      )}
       <div className="dashboard-tab-card">
       <div className="tab-bar dashboard-tab-bar overflow-x-auto max-w-full" role="tablist" aria-label="Filter requests by status">
         {(['all', 'pending', 'approved', 'completed', 'cancelled'] as const).map((tab) => {
@@ -2672,9 +2760,9 @@ function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus
       </div>
       {filteredRequests.length === 0 ? (
         <DashboardEmptyState
-          title={activeTab === 'all' ? 'No requests yet' : `No ${activeTab} requests`}
-          message={activeTab === 'all' ? 'Browse available food and send your first pickup request.' : `Nothing is currently ${activeTab}.`}
-          action="Use the Home feed to find food nearby."
+          title={activeTab === 'all' ? 'No pickup requests yet.' : `No ${activeTab} requests yet.`}
+          message={activeTab === 'all' ? 'Browse available food and send your first respectful pickup request.' : `Requests with ${activeTab} status will appear here when your pickup journey reaches that step.`}
+          action="Browse the Home feed to find food nearby."
         />
       ) : (
         <div className="space-y-5">
@@ -2924,6 +3012,12 @@ function Profile({ user, donations = [], requests = [], reviews = [], onBack, on
                 ))}
               </div>
             </fieldset>
+            {dietaryPreferences.length === 0 && (
+              <div className="empty-signal-card mt-4">
+                <div className="empty-signal-title">No dietary preferences selected</div>
+                <div className="empty-signal-copy">Add preferences anytime to make matching food easier to scan.</div>
+              </div>
+            )}
           </div>
 
           <div className="profile-form-card">
@@ -2986,6 +3080,12 @@ function Profile({ user, donations = [], requests = [], reviews = [], onBack, on
                 </motion.div>
               ))}
             </div>
+            {userDonations.length === 0 && completedPickups === 0 && (
+              <div className="empty-signal-card mt-4">
+                <div className="empty-signal-title">Impact starts with your first share</div>
+                <div className="empty-signal-copy">Your community impact will grow as you share and complete pickups.</div>
+              </div>
+            )}
           </div>
 
           <div className="profile-safety-card">
