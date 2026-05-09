@@ -946,6 +946,7 @@ export default function App() {
           <MyDonations
             donations={allDonations.filter(d => d.donorId === currentUser.id)}
             requests={requests}
+            reviews={reviews}
             users={users}
             onViewDetails={viewDonationDetails}
             onDelete={deleteDonation}
@@ -2114,28 +2115,127 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
   );
 }
 
-function MyDonations({ donations, requests, users, onViewDetails, onDelete, onEdit, onApprove, onDecline, onSetStatus }: any) {
+function DashboardStatGrid({ items }: { items: Array<{ label: string; value: number | string; tone?: string }> }) {
+  return (
+    <motion.div
+      className="dashboard-stat-grid"
+      initial="hidden"
+      animate="visible"
+      variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
+    >
+      {items.map((item) => (
+        <motion.div
+          key={item.label}
+          className={`dashboard-stat-card ${item.tone ? `tone-${item.tone}` : ''}`}
+          variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] } } }}
+        >
+          <div className="dashboard-stat-value">{item.value}</div>
+          <div className="dashboard-stat-label">{item.label}</div>
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+}
+
+function DashboardEmptyState({ title, message, action }: { title: string; message: string; action?: string }) {
+  return (
+    <motion.div
+      className="dashboard-empty-state"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <div className="dashboard-empty-icon" aria-hidden="true">🍽</div>
+      <h3 className="dashboard-empty-title">{title}</h3>
+      <p className="dashboard-empty-copy">{message}</p>
+      {action && <div className="dashboard-empty-action">{action}</div>}
+    </motion.div>
+  );
+}
+
+function RequestLifecycleMini({ status, reviewed = false }: { status: RequestStatus; reviewed?: boolean }) {
+  const stage = reviewed ? 3 : status === 'completed' ? 2 : status === 'approved' ? 1 : status === 'pending' ? 0 : -1;
+  const steps = ['Requested', 'Approved', 'Picked up', 'Reviewed'];
+  return (
+    <div className={`mini-lifecycle ${status === 'cancelled' ? 'is-cancelled' : ''}`} aria-label="Request lifecycle">
+      {steps.map((step, index) => (
+        <span key={step} className={`mini-lifecycle-step ${index < stage ? 'is-complete' : ''} ${index === stage ? 'is-active' : ''}`}>
+          <span className="mini-lifecycle-dot">{index < stage ? '✓' : index + 1}</span>
+          <span>{step}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function requestNextStep(status: RequestStatus, reviewed = false): string {
+  if (status === 'pending') return 'Waiting for the donor to approve your request.';
+  if (status === 'approved') return 'Pickup details are unlocked. Coordinate pickup respectfully.';
+  if (status === 'completed') return reviewed ? 'Pickup completed and review submitted.' : 'Pickup completed. You can leave a review.';
+  if (status === 'cancelled') return 'This request was cancelled.';
+  return 'Track this request as it moves toward pickup.';
+}
+
+function donationNextAction(donation: Donation, pendingCount: number, completedCount: number): string {
+  if (pendingCount > 0) return 'Review pending pickup request.';
+  if (donation.status === 'reserved') return 'Waiting for pickup.';
+  if (donation.status === 'picked_up' || completedCount > 0) return 'Donation completed.';
+  if (donation.status === 'available') return 'Listing is live and ready for requests.';
+  if (donation.status === 'expired') return 'Donation expired.';
+  if (donation.status === 'cancelled') return 'Listing cancelled.';
+  return 'Review listing status.';
+}
+
+function MyDonations({ donations, requests, reviews = [], users, onViewDetails, onDelete, onEdit, onApprove, onDecline, onSetStatus }: any) {
   const formatDateTime = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   const getDonationRequests = (did: number) => requests.filter((r: any) => r.donationId === did);
+  const donationIds = new Set(donations.map((d: any) => d.id));
+  const relevantRequests = requests.filter((r: any) => donationIds.has(r.donationId));
+  const pendingRequests = relevantRequests.filter((r: any) => r.status === 'pending').length;
+  const completedDonationIds = new Set(relevantRequests.filter((r: any) => r.status === 'completed').map((r: any) => r.donationId));
+  donations.filter((d: any) => d.status === 'picked_up').forEach((d: any) => completedDonationIds.add(d.id));
+  const completedPickups = completedDonationIds.size;
+  const activeDonations = donations.filter((d: any) => d.status === 'available' || d.status === 'reserved').length;
+  const receivedReviews = reviews.filter((review: any) => donationIds.has(review.donationId)).length;
+  const donationStats = [
+    { label: 'Active donations', value: activeDonations, tone: 'forest' },
+    { label: 'Pending requests', value: pendingRequests, tone: 'ember' },
+    { label: 'Completed pickups', value: completedPickups, tone: 'forest' },
+    { label: 'Reviews received', value: receivedReviews, tone: 'cream' },
+  ];
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="dashboard-hero mb-6">
         <div className="eyebrow mb-2">Donor dashboard</div>
         <h1 className="page-title">My donations.</h1>
         <p className="page-subtitle">Track your active listings and respond to incoming pickup requests.</p>
       </div>
-      {donations.length === 0 ? <EmptyState message="You haven't created any donations yet. Share something delicious!" /> : (
+      <DashboardStatGrid items={donationStats} />
+      {donations.length === 0 ? (
+        <DashboardEmptyState
+          title="No donations yet"
+          message="Share surplus food when you have something fresh to offer."
+          action="Create a donation from the top navigation."
+        />
+      ) : (
         <div className="space-y-5">
-          {donations.map((d: any) => {
+          {donations.map((d: any, idx: number) => {
             const dreqs = getDonationRequests(d.id);
             const pendingCount = dreqs.filter((r: any) => r.status === 'pending').length;
+            const completedCount = dreqs.filter((r: any) => r.status === 'completed').length;
             const expiry = expiryHint(d.expiryDate);
             const isAvailable = d.status === 'available';
             const isReserved = d.status === 'reserved';
             const isClosed = d.status === 'cancelled' || d.status === 'expired';
             return (
-              <div key={d.id} className="donation-row">
+              <motion.div
+                key={d.id}
+                className="donation-row dashboard-row"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.34, delay: Math.min(idx * 0.05, 0.25), ease: [0.16, 1, 0.3, 1] }}
+              >
                 <div className="grid grid-cols-1 md:grid-cols-12">
                   <div className="md:col-span-3 row-thumb">
                     <div className="row-thumb-inner">
@@ -2158,6 +2258,7 @@ function MyDonations({ donations, requests, users, onViewDetails, onDelete, onEd
                       )}
                     </div>
                     {pendingCount > 0 && <div className="alert-pending mb-4">⚠️ {pendingCount} pending request{pendingCount > 1 ? 's' : ''} awaiting your response</div>}
+                    <div className="dashboard-next-hint mb-4">{donationNextAction(d, pendingCount, completedCount)}</div>
                     {dreqs.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-zinc-100">
                         <div className="detail-label mb-3">Incoming requests</div>
@@ -2165,7 +2266,7 @@ function MyDonations({ donations, requests, users, onViewDetails, onDelete, onEd
                           {dreqs.map((r: any) => {
                             const requester = users.find((u: any) => u.id === r.requesterId);
                             return (
-                              <div key={r.id} className="incoming-request">
+                              <div key={r.id} className={`incoming-request dashboard-request-mini state-${r.status}`}>
                                 <div className="flex items-start gap-3">
                                   <div className="requester-avatar">👤</div>
                                   <div className="flex-1 min-w-0">
@@ -2245,7 +2346,7 @@ function MyDonations({ donations, requests, users, onViewDetails, onDelete, onEd
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -2527,15 +2628,23 @@ function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus
   const filteredRequests = activeTab === 'all' ? requests : requests.filter((r: any) => r.status === activeTab);
   const hasReview = (rid: number) => reviews.some((r: any) => r.requestId === rid);
   const tabCount = (tab: 'all' | RequestStatus) => tab === 'all' ? requests.length : requests.filter((r: any) => r.status === tab).length;
+  const requestStats = [
+    { label: 'Total requests', value: requests.length, tone: 'cream' },
+    { label: 'Pending', value: tabCount('pending'), tone: 'ember' },
+    { label: 'Approved', value: tabCount('approved'), tone: 'forest' },
+    { label: 'Completed', value: tabCount('completed'), tone: 'forest' },
+  ];
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="dashboard-hero mb-6">
         <div className="eyebrow mb-2">Recipient dashboard</div>
         <h1 className="page-title">My requests.</h1>
         <p className="page-subtitle">Follow your reservations from request to pickup.</p>
       </div>
-      <div className="tab-bar overflow-x-auto max-w-full" role="tablist" aria-label="Filter requests by status">
+      <DashboardStatGrid items={requestStats} />
+      <div className="dashboard-tab-card">
+      <div className="tab-bar dashboard-tab-bar overflow-x-auto max-w-full" role="tablist" aria-label="Filter requests by status">
         {(['all', 'pending', 'approved', 'completed', 'cancelled'] as const).map((tab) => {
           const label = tab === 'all' ? 'All' : tab.charAt(0).toUpperCase() + tab.slice(1);
           return (
@@ -2551,9 +2660,16 @@ function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus
           );
         })}
       </div>
-      {filteredRequests.length === 0 ? <EmptyState message={activeTab === 'all' ? 'No requests yet' : `No ${activeTab} requests`} /> : (
+      </div>
+      {filteredRequests.length === 0 ? (
+        <DashboardEmptyState
+          title={activeTab === 'all' ? 'No requests yet' : `No ${activeTab} requests`}
+          message={activeTab === 'all' ? 'Browse available food and send your first pickup request.' : `Nothing is currently ${activeTab}.`}
+          action="Use the Home feed to find food nearby."
+        />
+      ) : (
         <div className="space-y-5">
-          {filteredRequests.map((req: any) => {
+          {filteredRequests.map((req: any, idx: number) => {
             const donation = donations.find((d: any) => d.id === req.donationId);
             const donor = donation ? users.find((u: any) => u.id === donation.donorId) : null;
             if (!donation || !donor) return null;
@@ -2562,7 +2678,13 @@ function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus
             const canSeeAddress = donation.canSeeAddress ?? (req.status === 'approved' || req.status === 'completed');
             const reviewed = hasReview(req.id);
             return (
-              <div key={req.id} className={`request-row state-${req.status}`}>
+              <motion.div
+                key={req.id}
+                className={`request-row dashboard-row state-${req.status}`}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.34, delay: Math.min(idx * 0.05, 0.25), ease: [0.16, 1, 0.3, 1] }}
+              >
                 <div className="grid grid-cols-1 md:grid-cols-12">
                   <div className="md:col-span-3 row-thumb">
                     <div className="row-thumb-inner">
@@ -2581,6 +2703,8 @@ function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus
                       <span className="info-pill"><span className="info-pill-label">📍</span><span className="info-pill-value">{formatDonationAddress(donation, canSeeAddress)}</span></span>
                       {req.discreetPickup && <span className="privacy-badge">🔒 Discreet</span>}
                     </div>
+                    <RequestLifecycleMini status={req.status} reviewed={reviewed} />
+                    <div className="dashboard-next-hint mt-3">{requestNextStep(req.status, reviewed)}</div>
                     {!canSeeAddress && req.status === 'pending' && (
                       <div className="text-[12.5px] text-[#8a9b8c] mb-2">Full address shared after the donor approves your request.</div>
                     )}
@@ -2627,7 +2751,7 @@ function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
