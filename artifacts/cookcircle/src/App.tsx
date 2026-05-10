@@ -1990,7 +1990,7 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
                   {['Produce', 'Prepared Food', 'Baked Goods', 'Non-Perishable', 'Dairy', 'Meat & Seafood'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="cd-qty-expiry-grid">
                 <div>
                   <label htmlFor="cd-qty" className="form-label">Quantity <span className="text-red-600" aria-hidden>*</span></label>
                   <input id="cd-qty" type="text" placeholder="e.g., 5 kg" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="input-field" aria-required="true" />
