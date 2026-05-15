@@ -1,0 +1,208 @@
+/* ============================================================================
+ * CookCircle Design Tokens — "Editorial Pantry"
+ * ----------------------------------------------------------------------------
+ * Single source of truth for color, type, space, radius, shadow, motion.
+ * Consumed by:
+ *   - tailwind.config.js (via theme.extend that references var(--token))
+ *   - hand-authored utility classes in index.css
+ *   - motion/react animations via src/lib/motion.ts
+ *
+ * Naming convention: --[domain]-[role]-[step]
+ *   e.g.  --color-forest-600, --shadow-s2, --radius-lg, --mo-mid
+ *
+ * Sprint 1 ships tokens additively. Legacy hex values used directly in
+ * index.css continue to work; new code should reference the tokens.
+ * ========================================================================= */
+
+:root {
+  /* ------------------------------------------------------------------------
+   * COLOR — Editorial Pantry palette
+   * ---------------------------------------------------------------------- */
+
+  /* Paper / cream surfaces — warm, matte, generous */
+  --paper:           #FAF6EC;
+  --paper-tint:      #FDFBF6;
+  --paper-deep:      #F3EAD8;
+  --paper-line:      rgba(28, 53, 32, 0.10);   /* ruled line / hairline */
+  --paper-line-soft: rgba(28, 53, 32, 0.06);
+
+  /* Ink — near-black olive used for type heroes & dark surfaces */
+  --ink:        #0F1C12;
+  --ink-2:      #152818;
+  --ink-3:      #1C3520;
+  --ink-muted:  #4B5D4D;
+  --ink-soft:   #6B7D6E;
+  --ink-faint:  #8A9B8C;
+
+  /* Forest — primary brand green */
+  --forest-50:  #F1F6F1;
+  --forest-100: #DDE9DE;
+  --forest-200: #BCD0BD;
+  --forest-300: #8FB091;
+  --forest-400: #5E8861;
+  --forest-500: #3F6A44;
+  --forest-600: #2F5634;
+  --forest-700: #244429;
+  --forest-800: #1A3220;     /* deeper than legacy — for ink-tone forest */
+  --forest-900: #102014;
+
+  /* Ember — terracotta / saffron accent */
+  --ember-50:  #FDF3EC;
+  --ember-100: #FBE1CC;
+  --ember-200: #F6C294;
+  --ember-300: #EE9C5A;
+  --ember-400: #E07A3C;
+  --ember-500: #C95F28;
+  --ember-600: #A64A1F;
+  --ember-700: #7E3818;
+
+  /* Ember-Pop — rare high-energy moment (urgency, "5 min left") */
+  --ember-pop:      #FF5B2E;
+  --ember-pop-soft: rgba(255, 91, 46, 0.16);
+
+  /* Clay — softer, dustier complement for category plates */
+  --clay-100: #F5E9DC;
+  --clay-300: #D9B58A;
+  --clay-500: #B3854C;
+
+  /* Status semantic — bridged to legacy hues, normalized */
+  --status-available-bg:     rgba(15, 153, 96, 0.12);
+  --status-available-fg:     #0B6E47;
+  --status-available-ring:   rgba(15, 153, 96, 0.28);
+  --status-reserved-bg:      rgba(43, 124, 211, 0.12);
+  --status-reserved-fg:      #1F5DA3;
+  --status-reserved-ring:    rgba(43, 124, 211, 0.28);
+  --status-pending-bg:       rgba(245, 166, 35, 0.14);
+  --status-pending-fg:       #8A5500;
+  --status-pending-ring:     rgba(245, 166, 35, 0.32);
+  --status-completed-bg:     rgba(15, 153, 96, 0.12);
+  --status-completed-fg:     #0B6E47;
+  --status-cancelled-bg:     rgba(113, 113, 122, 0.12);
+  --status-cancelled-fg:     #4B5563;
+  --status-expired-bg:       rgba(219, 44, 62, 0.10);
+  --status-expired-fg:       #A51A2C;
+
+  /* Semantic aliases used by primitives */
+  --brand:          var(--forest-500);
+  --brand-strong:   var(--forest-800);
+  --accent:         var(--ember-400);
+  --accent-strong:  var(--ember-600);
+  --surface:        var(--paper-tint);
+  --surface-2:      var(--paper);
+  --surface-3:      var(--paper-deep);
+  --text:           var(--ink);
+  --text-muted:     var(--ink-muted);
+  --text-soft:      var(--ink-soft);
+  --hairline:       var(--paper-line);
+
+  /* ------------------------------------------------------------------------
+   * TYPE — editorial rhythm
+   * ---------------------------------------------------------------------- */
+  --font-display: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-sans:    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* Display scale — for Fraunces heroes only */
+  --t-display-xl: clamp(56px, 9vw, 104px);
+  --t-display-lg: clamp(40px, 6vw, 72px);
+  --t-display-md: clamp(32px, 4.6vw, 52px);
+  --t-display-sm: clamp(26px, 3.4vw, 38px);
+
+  /* Body scale */
+  --t-12: 12px;
+  --t-13: 13px;
+  --t-14: 14px;
+  --t-15: 15px;
+  --t-16: 16px;
+  --t-18: 18px;
+  --t-22: 22px;
+  --t-28: 28px;
+
+  /* Editorial tracking */
+  --track-display: -0.03em;     /* tight, for big serif */
+  --track-tight:   -0.01em;
+  --track-normal:  0;
+  --track-eyebrow: 0.14em;      /* wide, uppercase kickers */
+
+  /* Line-height */
+  --lh-display: 1.02;
+  --lh-tight:   1.15;
+  --lh-snug:    1.35;
+  --lh-body:    1.55;
+  --lh-loose:   1.7;
+
+  /* ------------------------------------------------------------------------
+   * SPACE — 4/8-point grid
+   * ---------------------------------------------------------------------- */
+  --s-0:  0;
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  20px;
+  --s-6:  24px;
+  --s-7:  32px;
+  --s-8:  40px;
+  --s-9:  56px;
+  --s-10: 72px;
+  --s-11: 96px;
+  --s-12: 128px;
+
+  /* ------------------------------------------------------------------------
+   * RADIUS — single ladder, pick one per surface family
+   * ---------------------------------------------------------------------- */
+  --radius-xs:   6px;
+  --radius-sm:  10px;
+  --radius-md:  14px;
+  --radius-lg:  20px;
+  --radius-xl:  28px;
+  --radius-2xl: 36px;
+  --radius-pill: 9999px;
+
+  /* ------------------------------------------------------------------------
+   * SHADOW — hairline → soft → elevated → glow
+   * ---------------------------------------------------------------------- */
+  --shadow-s1: 0 1px 0 rgba(28, 53, 32, 0.04);
+  --shadow-s2: 0 1px 2px rgba(28, 53, 32, 0.05), 0 8px 24px -12px rgba(28, 53, 32, 0.14);
+  --shadow-s3: 0 2px 4px rgba(28, 53, 32, 0.06), 0 20px 48px -16px rgba(28, 53, 32, 0.22);
+  --shadow-s4: 0 4px 8px rgba(28, 53, 32, 0.08), 0 36px 80px -24px rgba(28, 53, 32, 0.30);
+  --shadow-glow-ember: 0 10px 28px -10px rgba(224, 122, 60, 0.45);
+  --shadow-glow-forest: 0 10px 28px -10px rgba(36, 68, 41, 0.45);
+  --shadow-inset-line: inset 0 0 0 1px rgba(28, 53, 32, 0.06);
+
+  /* ------------------------------------------------------------------------
+   * MOTION — durations, easings, springs
+   * ---------------------------------------------------------------------- */
+  --mo-fast: 180ms;
+  --mo-mid:  320ms;
+  --mo-slow: 600ms;
+  --mo-hero: 900ms;
+
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);   /* "out-expo-ish" — calm enter */
+  --ease-snap: cubic-bezier(0.5, 0, 0.1, 1);     /* punchier — for clicks */
+  --ease-glide: cubic-bezier(0.4, 0, 0.2, 1);    /* generic ui */
+
+  /* ------------------------------------------------------------------------
+   * FOCUS — accessible focus ring tokens
+   * ---------------------------------------------------------------------- */
+  --focus-ring: 0 0 0 3px rgba(63, 106, 68, 0.30);
+  --focus-ring-accent: 0 0 0 3px rgba(224, 122, 60, 0.34);
+
+  /* ------------------------------------------------------------------------
+   * LAYOUT — container widths
+   * ---------------------------------------------------------------------- */
+  --container-narrow: 640px;
+  --container-prose:  720px;
+  --container-wide:   1184px;
+  --container-bleed:  1440px;
+}
+
+/* Respect motion preference globally — kills duration tokens for animations */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --mo-fast: 0ms;
+    --mo-mid:  0ms;
+    --mo-slow: 0ms;
+    --mo-hero: 0ms;
+  }
+}

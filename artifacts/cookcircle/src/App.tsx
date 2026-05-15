@@ -1,6 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
-import { FloatingFoodHero } from './components/FloatingFoodHero';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { dur, ease } from './lib/motion';
+import { AuthScreen } from './components/AuthScreen';
+import { Header } from './components/Header';
+import { FeedHero } from './components/FeedHero';
+import { DonationCard } from './components/DonationCard';
+import { TrustPortrait } from './components/TrustPortrait';
+import { CountUp, Eyebrow, Icon } from './components/ui';
 import {
   api,
   type DietaryTag,
@@ -25,12 +31,104 @@ import {
 
 // ---------------------------------------------------------------------------
 // UI Preview Mode — dev-only visual inspection bypass.
-// Activated only when running the Vite dev server AND the URL has ?uiPreview=1.
-// Never active in production builds (import.meta.env.DEV is false after build).
+//
+// Activated when running the Vite dev server AND ANY of:
+//   - env var VITE_UI_PREVIEW=true  (set before `pnpm dev`)
+//   - URL query   ?preview=1
+//   - URL query   ?uiPreview=1     (legacy, kept for backwards compat)
+//
+// Never active in production builds: `import.meta.env.DEV` is false after
+// `vite build`, so preview mode is impossible to ship by accident.
+//
+// In preview mode the app:
+//   - Auto-logs in as PREVIEW_CURRENT_USER (no /api/auth/* call)
+//   - Loads mock donations / requests / reviews / users from previewData.ts
+//   - Short-circuits every api.* mutation with a "[Preview] …" toast
+//   - Returns a synthetic GeocodePreview from the location-check step
+//   - Neuters logout so the user stays in preview
 // ---------------------------------------------------------------------------
-const IS_UI_PREVIEW =
-  !!(import.meta as any).env?.DEV &&
-  new URLSearchParams(window.location.search).get('uiPreview') === '1';
+const IS_UI_PREVIEW: boolean = (() => {
+  if (typeof window === 'undefined') return false;
+  const env = (import.meta as any).env ?? {};
+  if (!env.DEV) return false; // never in production builds
+
+  const envFlag = String(env.VITE_UI_PREVIEW ?? '').toLowerCase();
+  if (envFlag === 'true' || envFlag === '1' || envFlag === 'yes') return true;
+
+  const q = new URLSearchParams(window.location.search);
+  if (q.get('preview') === '1' || q.get('uiPreview') === '1') return true;
+
+  return false;
+})();
+
+/**
+ * Build a high-confidence GeocodePreview without calling /api.
+ * Used only when IS_UI_PREVIEW is true so the location-confirm step in
+ * Create / Edit Donation can render end-to-end without a backend.
+ */
+/**
+ * Defensive scroll reset that hits every plausible scroll container.
+ *
+ * Why we need this:
+ *   - `index.css` base layer sets `html, body, #root { height: 100% }` and
+ *     `body { overflow-x: hidden }`. That makes <body> a scrolling box in
+ *     addition to <html>; `document.scrollingElement` can be either depending
+ *     on browser, and `window.scrollTo` only reaches the scrollingElement.
+ *   - We don't know at runtime which element is actually scrolling, so we
+ *     reset all of them. This is cheap (each scrollTo is a no-op when there's
+ *     nothing to scroll) and bulletproof.
+ *   - `behavior: 'auto'` overrides any inherited `scroll-behavior: smooth`
+ *     CSS rule, so the reset is instant.
+ */
+function resetDocumentScroll(): void {
+  if (typeof window === 'undefined') return;
+
+  try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch { /* ignore */ }
+
+  if (document.documentElement) {
+    document.documentElement.scrollTop = 0;
+    document.documentElement.scrollLeft = 0;
+  }
+  if (document.body) {
+    document.body.scrollTop = 0;
+    document.body.scrollLeft = 0;
+  }
+
+  const targets: Array<Element | null> = [
+    document.getElementById('cc-main'),
+    document.getElementById('root'),
+    document.querySelector('.cc-app-shell'),
+  ];
+  for (const el of targets) {
+    if (el && el instanceof HTMLElement) {
+      try { el.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch { /* ignore */ }
+      el.scrollTop = 0;
+      el.scrollLeft = 0;
+    }
+  }
+}
+
+function syntheticGeocodePreview(
+  street: string,
+  houseNumber: string,
+  city: string,
+): GeocodePreview {
+  // Deterministic-ish coords inside greater Tel Aviv based on street name.
+  const hash = (street + city).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const lat = 32.07 + ((hash % 60) - 30) / 1000;    // ~±0.030 ≈ ±3.3km
+  const lng = 34.78 + ((hash % 80) - 40) / 1000;
+  return {
+    areaLat: Number(lat.toFixed(5)),
+    areaLng: Number(lng.toFixed(5)),
+    exactLat: Number(lat.toFixed(5)),
+    exactLng: Number(lng.toFixed(5)),
+    areaRadiusMeters: 500,
+    formattedAddress: `${street}${houseNumber ? ' ' + houseNumber : ''}, ${city}`,
+    status: 'ok',
+    precision: 'rooftop',
+    provider: 'local',
+  };
+}
 
 const ISRAELI_CITIES = [
   'Tel Aviv', 'Jerusalem', 'Haifa', 'Beer Sheva', 'Rishon LeZion',
@@ -427,181 +525,6 @@ function DonationImage({ url, foodType, seedId, large = false }: {
   );
 }
 
-function AuthScreen({ onLogin }: { onLogin: (user: User) => void }) {
-  const [tab, setTab] = useState<'login' | 'register'>('login');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      const user = await api.login(email, password);
-      onLogin(user);
-    } catch (err: any) {
-      setError(err?.message ?? 'Login failed');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      const user = await api.register(name, email, password);
-      onLogin(user);
-    } catch (err: any) {
-      setError(err?.message ?? 'Registration failed');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="app-background auth-shell">
-      {/* ── Left hero panel (desktop only) — Motion floating food hero ── */}
-      <FloatingFoodHero />
-
-      {/* ── Right form panel ── */}
-      <div className="auth-form-panel">
-        <div className="card p-6 w-full max-w-sm" style={{ boxShadow: '0 2px 4px rgba(28,53,32,0.06), 0 20px 48px -16px rgba(28,53,32,0.18)' }}>
-          {/* Mobile-only brand header */}
-          <div className="flex items-center gap-3 mb-6 lg:hidden">
-            <span className="brand-logo">🌿</span>
-            <span className="brand-wordmark">CookCircle</span>
-          </div>
-
-          <div className="flex border-b border-zinc-200 mb-6">
-            <button
-              type="button"
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'login' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-zinc-500 hover:text-zinc-700'}`}
-              onClick={() => { setTab('login'); setError(null); }}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'register' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-zinc-500 hover:text-zinc-700'}`}
-              onClick={() => { setTab('register'); setError(null); }}
-            >
-              Register
-            </button>
-          </div>
-
-          {tab === 'login' ? (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label htmlFor="auth-email" className="form-label">Email</label>
-                <input
-                  id="auth-email"
-                  type="email"
-                  className="input-field"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </div>
-              <div>
-                <label htmlFor="auth-password" className="form-label">Password</label>
-                <input
-                  id="auth-password"
-                  type="password"
-                  className="input-field"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                />
-              </div>
-              {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-              <button type="submit" disabled={busy} className="cta-button w-full justify-center">
-                {busy ? 'Signing in…' : 'Sign In'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div>
-                <label htmlFor="auth-name" className="form-label">Name</label>
-                <input
-                  id="auth-name"
-                  type="text"
-                  className="input-field"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  required
-                  minLength={2}
-                  autoComplete="name"
-                />
-              </div>
-              <div>
-                <label htmlFor="auth-email-r" className="form-label">Email</label>
-                <input
-                  id="auth-email-r"
-                  type="email"
-                  className="input-field"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </div>
-              <div>
-                <label htmlFor="auth-password-r" className="form-label">Password (min. 8 characters)</label>
-                <input
-                  id="auth-password-r"
-                  type="password"
-                  className="input-field"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                />
-              </div>
-              {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-              <button type="submit" disabled={busy} className="cta-button w-full justify-center">
-                {busy ? 'Creating account…' : 'Create Account'}
-              </button>
-            </form>
-          )}
-
-          {/* Demo credentials — polished quick-access card */}
-          <div className="demo-creds-card">
-            <div className="demo-creds-title">⚡ Quick demo access</div>
-            <div className="demo-creds-row">
-              <span className="demo-creds-label">🧑‍🍳 Donor — Yael</span>
-              <button type="button" className="demo-creds-btn" onClick={() => { setEmail('yael@example.co.il'); setTab('login'); }}>
-                yael@example.co.il
-              </button>
-            </div>
-            <div className="demo-creds-row">
-              <span className="demo-creds-label">👩‍🍳 Donor — Maya</span>
-              <button type="button" className="demo-creds-btn" onClick={() => { setEmail('maya@example.co.il'); setTab('login'); }}>
-                maya@example.co.il
-              </button>
-            </div>
-            <div className="demo-creds-row">
-              <span className="demo-creds-label">🙋 User — David</span>
-              <button type="button" className="demo-creds-btn" onClick={() => { setEmail('david@example.co.il'); setTab('login'); }}>
-                david@example.co.il
-              </button>
-            </div>
-            <p style={{ fontSize: 11, color: '#8a9b8c', textAlign: 'center', marginTop: 10 }}>
-              Password for all accounts: <span style={{ fontWeight: 600, color: '#4b5d4d' }}>CookCircle123!</span>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<'feed' | 'details' | 'create' | 'edit' | 'my-donations' | 'requests' | 'review' | 'profile'>('feed');
@@ -709,6 +632,71 @@ export default function App() {
   }, []);
   useEffect(() => { loadDonations(); }, [loadDonations]);
 
+  // ── Navigation scroll-reset ──────────────────────────────────────────────
+  // The previous (simpler) fix called `window.scrollTo` on the navKey change,
+  // but it did not actually reset scroll in the running browser. Two reasons:
+  //
+  //   1. `index.css` base layer sets `html, body, #root { height: 100% }` and
+  //      `body { overflow-x: hidden }`. Per CSS spec, when one overflow axis
+  //      is non-`visible`, the other becomes `auto` — so `<body>` itself is a
+  //      scrolling box. Depending on browser quirks, `document.scrollingElement`
+  //      can end up as `<body>` or `<html>`, and `window.scrollTo` doesn't
+  //      always reach the correct one. We reset every plausible scroll target.
+  //
+  //   2. Sprint 3 added `<AnimatePresence mode="wait">` around the screens.
+  //      That keeps the OUTGOING screen mounted (and scroll-height tall) for
+  //      ~320 ms after the user clicks. A single synchronous `scrollTo` fires
+  //      before the new screen mounts, then the outgoing screen unmounts and
+  //      the new one's layout may settle the scroll position back. We chain
+  //      three resets — sync, rAF, and a 360 ms timeout that lands after the
+  //      exit animation completes — so the final scroll position is always 0.
+  //
+  // We also disable the browser's native scroll-restoration so it doesn't
+  // race us on back/forward navigation.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try { history.scrollRestoration = 'manual'; } catch { /* ignore */ }
+  }, []);
+
+  const navKey = `${currentScreen}|${selectedDonationId ?? ''}|${selectedRequestId ?? ''}|${editDonationId ?? ''}`;
+  useLayoutEffect(() => {
+    if (authState !== 'authed') return;
+
+    // Mutable refs for the rAF + timeout handles; the cleanup closure captures
+    // them so it can cancel whichever phase is in-flight when the user
+    // navigates again before the chain completes.
+    const handles: { raf1: number; raf2: number | null; t: number | null } = {
+      raf1: 0,
+      raf2: null,
+      t: null,
+    };
+
+    // Phase 1 — synchronous reset before paint
+    resetDocumentScroll();
+
+    // Phase 2 — next frame, after layout settles for this render
+    handles.raf1 = requestAnimationFrame(() => {
+      resetDocumentScroll();
+
+      // Phase 3 — frame after that, catches layout in-between with
+      // AnimatePresence mode="wait"
+      handles.raf2 = requestAnimationFrame(() => {
+        resetDocumentScroll();
+
+        // Phase 4 — final safety reset after the exit animation has finished
+        // (Sprint 3 screen cross-fade dur.mid = 320 ms; we add a margin).
+        handles.t = window.setTimeout(resetDocumentScroll, 380);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(handles.raf1);
+      if (handles.raf2 != null) cancelAnimationFrame(handles.raf2);
+      if (handles.t != null) window.clearTimeout(handles.t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navKey, authState]);
+
   const useMyLocation = () => {
     setOriginError(null);
     if (!navigator.geolocation) {
@@ -731,6 +719,12 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    if (IS_UI_PREVIEW) {
+      // In preview mode there is no real session; keep the user in the
+      // mock-data experience instead of bouncing them to the auth screen.
+      showToast('success', '[Preview] Sign-out disabled — refresh to reset');
+      return;
+    }
     try { await api.logout(); } catch { /* ignore */ }
     setCurrentUser(null);
     setAuthState('unauthed');
@@ -850,11 +844,7 @@ export default function App() {
   };
 
   if (authState === 'loading') {
-    return (
-      <div className="min-h-screen app-background flex items-center justify-center text-zinc-500">
-        Loading…
-      </div>
-    );
+    return <FullScreenLoader />;
   }
 
   if (authState === 'unauthed') {
@@ -862,18 +852,15 @@ export default function App() {
   }
 
   if (!currentUser) {
-    return (
-      <div className="min-h-screen app-background flex items-center justify-center text-zinc-500">
-        {loadError ? `⚠️ ${loadError}` : 'Loading…'}
-      </div>
-    );
+    return loadError ? <FullScreenError message={loadError} /> : <FullScreenLoader />;
   }
 
   return (
-    <div className="min-h-screen app-background">
+    <div className="min-h-screen cc-app-shell">
+      <a href="#cc-main" className="cc-skip-link">Skip to content</a>
       {IS_UI_PREVIEW && (
         <div className="ui-preview-banner" role="status">
-          🎨 UI Preview Mode — mock data only
+          UI Preview Mode — mock data only
         </div>
       )}
       <Header
@@ -882,182 +869,187 @@ export default function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
       />
-      <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
+      <main id="cc-main" className="max-w-wide mx-auto px-4 md:px-8 py-6 md:py-8">
         {loadError && (
-          <div className="alert-pending mb-6">⚠️ {loadError}</div>
-        )}
-        {toast && (
-          <div className={`toast-overlay ${toast.kind === 'success' ? 'toast-success' : 'toast-error'}`} role="status" aria-live="polite">
-            <span aria-hidden="true">{toast.kind === 'success' ? '✓' : '⚠'}</span>
-            {toast.message}
+          <div className="cc-inline-alert" role="alert">
+            <span className="cc-inline-alert-dot" aria-hidden="true" />
+            <span>{loadError}</span>
           </div>
         )}
+        <AnimatePresence>
+          {toast && (
+            <motion.div
+              key="cc-toast"
+              className={`cc-toast-overlay ${toast.kind === 'success' ? 'is-success' : 'is-error'}`}
+              role="status"
+              aria-live="polite"
+              initial={{ opacity: 0, y: -12, scale: 0.94 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.96, transition: { duration: 0.18, ease: ease.snap } }}
+              transition={{ type: 'spring', stiffness: 320, damping: 26, mass: 0.8 }}
+            >
+              <span className="cc-toast-dot" aria-hidden="true" />
+              {toast.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
         {busy && (
-          <div className="mb-4 text-xs text-zinc-500">Working…</div>
+          <div className="cc-busy-pip" aria-live="polite">
+            <span className="cc-busy-pip-dot" aria-hidden="true" />
+            Working…
+          </div>
         )}
-        {currentScreen === 'feed' && (
-          <DonationFeed
-            donations={donations}
-            impactDonations={allDonations}
-            pickupRequests={requests}
-            users={users}
-            onViewDetails={viewDonationDetails}
-            filterCity={filterCity} setFilterCity={setFilterCity}
-            filterDietary={filterDietary} setFilterDietary={setFilterDietary}
-            filterStatus={filterStatus} setFilterStatus={setFilterStatus}
-            sortMode={sortMode} setSortMode={setSortMode}
-            origin={origin}
-            useMyLocation={useMyLocation}
-            clearOrigin={clearOrigin}
-            originError={originError}
-            locationFallback={healthStatus ? healthStatus.location === 'local' : true}
-          />
-        )}
-        {currentScreen === 'details' && selectedDonationId && (() => {
-          const d = allDonations.find(x => x.id === selectedDonationId);
-          const donor = d ? users.find(u => u.id === d.donorId) : undefined;
-          if (!d || !donor) return <EmptyState message="Donation not found" />;
-          return (
-            <DonationDetails
-              donation={d}
-              donor={donor}
-              onBack={() => setCurrentScreen('feed')}
-              onSubmitRequest={createPickupRequest}
-              currentUserId={currentUser.id}
-              requests={requests}
-              reviews={reviews}
-              locationFallback={healthStatus ? healthStatus.location === 'local' : true}
-            />
-          );
-        })()}
-        {currentScreen === 'create' && <CreateDonation onBack={() => setCurrentScreen('feed')} onSubmit={createDonation} />}
-        {currentScreen === 'edit' && editDonationId && (() => {
-          const d = allDonations.find(x => x.id === editDonationId);
-          if (!d) return <EmptyState message="Donation not found" />;
-          return (
-            <EditDonation
-              donation={d}
-              onBack={() => setCurrentScreen('my-donations')}
-              onSubmit={(patch) => updateDonation(editDonationId, patch)}
-            />
-          );
-        })()}
-        {currentScreen === 'my-donations' && (
-          <MyDonations
-            donations={allDonations.filter(d => d.donorId === currentUser.id)}
-            requests={requests}
-            reviews={reviews}
-            users={users}
-            onViewDetails={viewDonationDetails}
-            onDelete={deleteDonation}
-            onEdit={openEditScreen}
-            onApprove={(rid: number) => updateRequestStatus(rid, 'approved')}
-            onDecline={(rid: number) => updateRequestStatus(rid, 'cancelled')}
-            onSetStatus={setDonationStatus}
-          />
-        )}
-        {currentScreen === 'requests' && (
-          <MyRequests
-            requests={requests.filter(r => r.requesterId === currentUser.id)}
-            donations={allDonations}
-            users={users}
-            onViewDonation={viewDonationDetails}
-            onUpdateStatus={updateRequestStatus}
-            onLeaveReview={openReviewScreen}
-            reviews={reviews}
-          />
-        )}
-        {currentScreen === 'review' && selectedRequestId && (() => {
-          const req = requests.find(r => r.id === selectedRequestId);
-          const d = req ? allDonations.find(x => x.id === req.donationId) : undefined;
-          const donor = d ? users.find(u => u.id === d.donorId) : undefined;
-          if (!req || !d || !donor) return <EmptyState message="Pickup not found" />;
-          return (
-            <ReviewRating
-              request={req}
-              donation={d}
-              donor={donor}
-              onBack={() => setCurrentScreen('requests')}
-              onSubmit={(rating: number, comment: string) => submitReview(selectedRequestId!, rating, comment)}
-            />
-          );
-        })()}
-        {currentScreen === 'profile' && (
-          <Profile
-            user={currentUser}
-            donations={allDonations}
-            requests={requests}
-            reviews={reviews}
-            onBack={() => setCurrentScreen('feed')}
-            onSave={saveProfile}
-          />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={currentScreen}
+            className="cc-screen"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: dur.mid, ease: ease.soft }}
+          >
+            {currentScreen === 'feed' && (
+              <DonationFeed
+                donations={donations}
+                impactDonations={allDonations}
+                pickupRequests={requests}
+                users={users}
+                currentUser={currentUser}
+                onCreate={() => setCurrentScreen('create')}
+                onViewDetails={viewDonationDetails}
+                filterCity={filterCity} setFilterCity={setFilterCity}
+                filterDietary={filterDietary} setFilterDietary={setFilterDietary}
+                filterStatus={filterStatus} setFilterStatus={setFilterStatus}
+                sortMode={sortMode} setSortMode={setSortMode}
+                origin={origin}
+                useMyLocation={useMyLocation}
+                clearOrigin={clearOrigin}
+                originError={originError}
+                locationFallback={healthStatus ? healthStatus.location === 'local' : true}
+              />
+            )}
+            {currentScreen === 'details' && selectedDonationId && (() => {
+              const d = allDonations.find(x => x.id === selectedDonationId);
+              const donor = d ? users.find(u => u.id === d.donorId) : undefined;
+              if (!d || !donor) return <EmptyState message="Donation not found" />;
+              return (
+                <DonationDetails
+                  donation={d}
+                  donor={donor}
+                  onBack={() => setCurrentScreen('feed')}
+                  onSubmitRequest={createPickupRequest}
+                  currentUserId={currentUser.id}
+                  requests={requests}
+                  reviews={reviews}
+                  locationFallback={healthStatus ? healthStatus.location === 'local' : true}
+                />
+              );
+            })()}
+            {currentScreen === 'create' && <CreateDonation onBack={() => setCurrentScreen('feed')} onSubmit={createDonation} />}
+            {currentScreen === 'edit' && editDonationId && (() => {
+              const d = allDonations.find(x => x.id === editDonationId);
+              if (!d) return <EmptyState message="Donation not found" />;
+              return (
+                <EditDonation
+                  donation={d}
+                  onBack={() => setCurrentScreen('my-donations')}
+                  onSubmit={(patch) => updateDonation(editDonationId, patch)}
+                />
+              );
+            })()}
+            {currentScreen === 'my-donations' && (
+              <MyDonations
+                donations={allDonations.filter(d => d.donorId === currentUser.id)}
+                requests={requests}
+                reviews={reviews}
+                users={users}
+                onViewDetails={viewDonationDetails}
+                onDelete={deleteDonation}
+                onEdit={openEditScreen}
+                onApprove={(rid: number) => updateRequestStatus(rid, 'approved')}
+                onDecline={(rid: number) => updateRequestStatus(rid, 'cancelled')}
+                onSetStatus={setDonationStatus}
+              />
+            )}
+            {currentScreen === 'requests' && (
+              <MyRequests
+                requests={requests.filter(r => r.requesterId === currentUser.id)}
+                donations={allDonations}
+                users={users}
+                onViewDonation={viewDonationDetails}
+                onUpdateStatus={updateRequestStatus}
+                onLeaveReview={openReviewScreen}
+                reviews={reviews}
+              />
+            )}
+            {currentScreen === 'review' && selectedRequestId && (() => {
+              const req = requests.find(r => r.id === selectedRequestId);
+              const d = req ? allDonations.find(x => x.id === req.donationId) : undefined;
+              const donor = d ? users.find(u => u.id === d.donorId) : undefined;
+              if (!req || !d || !donor) return <EmptyState message="Pickup not found" />;
+              return (
+                <ReviewRating
+                  request={req}
+                  donation={d}
+                  donor={donor}
+                  onBack={() => setCurrentScreen('requests')}
+                  onSubmit={(rating: number, comment: string) => submitReview(selectedRequestId!, rating, comment)}
+                />
+              );
+            })()}
+            {currentScreen === 'profile' && (
+              <Profile
+                user={currentUser}
+                donations={allDonations}
+                requests={requests}
+                reviews={reviews}
+                onBack={() => setCurrentScreen('feed')}
+                onSave={saveProfile}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );
 }
 
-function Header({ currentScreen, onNavigate, currentUser, onLogout }: {
-  currentScreen: string;
-  onNavigate: (screen: any) => void;
-  currentUser: User;
-  onLogout: () => void;
-}) {
+
+function FullScreenLoader() {
   return (
-    <header className="header-gradient sticky top-0 z-30">
-      <div className="header-inner max-w-7xl mx-auto flex flex-wrap items-center justify-between px-4 md:px-8 py-3 md:py-4 gap-3">
-        <button onClick={() => onNavigate('feed')} className="header-brand flex items-center gap-3">
-          <span className="brand-logo">🌿</span>
-          <span className="brand-wordmark">CookCircle</span>
-        </button>
-        <nav className="header-nav flex gap-1 order-3 md:order-2 w-full md:w-auto overflow-x-auto">
-          {[['feed', 'Home'], ['my-donations', 'My Donations'], ['requests', 'My Requests'], ['profile', 'Profile']].map(([screen, label]) => (
-            <button
-              key={screen}
-              onClick={() => onNavigate(screen)}
-              className={`nav-link ${currentScreen === screen ? 'nav-active' : ''}`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-        <div className="header-actions flex items-center gap-2 md:gap-3 order-2 md:order-3 ml-auto md:ml-0">
-          <span className="text-sm text-zinc-600 hidden sm:inline truncate max-w-[140px]" title={currentUser.displayName}>
-            👤 {currentUser.displayName}
-          </span>
-          <button
-            onClick={onLogout}
-            className="signout-button px-3 py-1.5 text-sm border border-zinc-300 rounded-lg text-zinc-700 hover:bg-zinc-50 transition-colors"
-          >
-            Sign out
-          </button>
-          <button onClick={() => onNavigate('create')} className="cta-button header-create-button" aria-label="Create donation">
-            <span aria-hidden="true">＋</span><span className="hidden sm:inline" aria-hidden="true">Create Donation</span>
-          </button>
-        </div>
+    <div className="cc-fullscreen" role="status" aria-live="polite">
+      <span className="cc-loader-glyph" aria-hidden="true" />
+      <Eyebrow size="sm" tone="var(--ink-faint)">CookCircle</Eyebrow>
+      <p className="cc-fullscreen-copy">Setting the table…</p>
+    </div>
+  );
+}
+
+function FullScreenError({ message }: { message: string }) {
+  return (
+    <div className="cc-fullscreen cc-fullscreen--error" role="alert">
+      <div className="cc-empty-glyph cc-empty-glyph--error" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 8v5" />
+          <path d="M12 17h.01" />
+          <circle cx="12" cy="12" r="9" />
+        </svg>
       </div>
-    </header>
+      <Eyebrow size="sm" tone="var(--ink-faint)">Something went wrong</Eyebrow>
+      <h2 className="cc-empty-title">We couldn't load your data.</h2>
+      <p className="cc-empty-copy">{message}</p>
+    </div>
   );
 }
 
 function StatusBadge({ status }: { status: DonationStatus | RequestStatus }) {
-  const getClass = () => {
-    switch (status) {
-      case 'available': return 'status-available';
-      case 'reserved': return 'status-reserved';
-      case 'picked_up':
-      case 'completed': return 'status-completed';
-      case 'approved': return 'status-approved';
-      case 'pending': return 'status-pending';
-      case 'cancelled': return 'status-cancelled';
-      case 'expired': return 'status-expired';
-      default: return 'status-cancelled';
-    }
-  };
-  const label = status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  // Editorial cc-status pill: dot + word. Same visual language as donation cards.
+  // The dot is meaningful (semantic color) and the label is the redundant text
+  // signal — so status is never communicated by color alone (a11y).
+  const label = status.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   return (
-    <span className={`status-badge ${getClass()}`}>
-      <span className="status-dot"></span>
+    <span className={`cc-status cc-status--${status}`} role="status" aria-label={`Status: ${label}`}>
+      <span className="cc-status-dot" aria-hidden="true" />
       {label}
     </span>
   );
@@ -1065,24 +1057,27 @@ function StatusBadge({ status }: { status: DonationStatus | RequestStatus }) {
 
 function DietaryTagBadge({ tag }: { tag: DietaryTag }) {
   const labels: Record<DietaryTag, string> = {
-    kosher: 'Kosher', gluten_free: 'Gluten-Free', vegan: 'Vegan', vegetarian: 'Vegetarian',
+    kosher: 'Kosher', gluten_free: 'Gluten-free', vegan: 'Vegan', vegetarian: 'Vegetarian',
   };
-  return <span className="dietary-tag">{labels[tag]}</span>;
+  return <span className="cc-tag">{labels[tag]}</span>;
 }
 
 function EmptyState({ message, title }: { message: string; title?: string }) {
   return (
     <motion.div
-      className="empty-state"
+      className="cc-empty"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="max-w-sm mx-auto">
-        <div className="empty-icon">🌾</div>
-        {title && <h3 className="empty-title">{title}</h3>}
-        <p className="empty-text">{message}</p>
+      <div className="cc-empty-glyph" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="12" r="5" />
+        </svg>
       </div>
+      {title && <h3 className="cc-empty-title">{title}</h3>}
+      <p className="cc-empty-copy">{message}</p>
     </motion.div>
   );
 }
@@ -1092,29 +1087,36 @@ function ProductEmptyState({
   message,
   action,
   onAction,
-  icon = '🍽',
+  icon: _legacyIcon,
 }: {
   title: string;
   message: string;
   action?: string;
   onAction?: () => void;
+  /** Legacy prop, ignored — the editorial empty state renders its own glyph. */
   icon?: string;
 }) {
   return (
     <motion.div
-      className="product-empty-state"
+      className="cc-empty"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="product-empty-icon" aria-hidden="true">{icon}</div>
-      <h3 className="product-empty-title">{title}</h3>
-      <p className="product-empty-copy">{message}</p>
+      <div className="cc-empty-glyph" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="12" r="5" />
+        </svg>
+      </div>
+      <Eyebrow size="sm" tone="var(--ink-faint)">An empty plate</Eyebrow>
+      <h3 className="cc-empty-title">{title}</h3>
+      <p className="cc-empty-copy">{message}</p>
       {action && (
         onAction ? (
-          <button type="button" onClick={onAction} className="product-empty-action">{action}</button>
+          <button type="button" onClick={onAction} className="cc-empty-action">{action}</button>
         ) : (
-          <div className="product-empty-note">{action}</div>
+          <div className="cc-empty-note">{action}</div>
         )
       )}
     </motion.div>
@@ -1200,64 +1202,9 @@ function formatKg(value: number): string {
   return String(Math.round(value));
 }
 
-function DonationCard({ donation, donor, onViewDetails, index = 0 }: {
-  donation: DonationWithDistance; donor: User; onViewDetails: (id: number) => void; index?: number;
-}) {
-  const expiry = expiryHint(donation.expiryDate);
-  const initials = donor.displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-
-  return (
-    <motion.div
-      className="card flex flex-col"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.38, delay: Math.min(index * 0.07, 0.35), ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ y: -6, transition: { duration: 0.2, ease: 'easeOut' } }}
-    >
-      <div className="card-image">
-        <DonationImage url={donation.imageUrl} foodType={donation.foodType} seedId={donation.id} />
-        <div className="image-badge">
-          <StatusBadge status={donation.status} />
-        </div>
-        {donation.distanceKm != null && (
-          <div className="image-badge-right">
-            <span className="distance-pill">📍 {donation.distanceKm.toFixed(1)} km</span>
-          </div>
-        )}
-      </div>
-      <div className="card-body flex-1 flex flex-col">
-        <div className="card-food-type">{donation.foodType}</div>
-        <h3 className="card-title">{donation.title}</h3>
-        <div className="card-meta">
-          <span className="donor-avatar" aria-hidden>{initials}</span>
-          <span>{donor.displayName}</span>
-          <span className="card-rating ml-auto">⭐ {donor.rating.toFixed(1)}</span>
-        </div>
-        <div className="card-details-row">
-          <span aria-hidden>🍽</span>
-          <span>{donation.quantity}</span>
-          <span className="card-sep" aria-hidden>·</span>
-          <span aria-hidden>📍</span>
-          <span>{donation.city}</span>
-        </div>
-        {(donation.dietaryTags.length > 0 || (expiry && donation.status === 'available')) && (
-          <div className="flex flex-wrap items-center gap-1.5 mt-3">
-            {expiry && donation.status === 'available' && (
-              <span className={`expiry-pill ${expiry.soon ? 'is-soon' : ''}`}>⏱ {expiry.label}</span>
-            )}
-            {donation.dietaryTags.map((tag) => <DietaryTagBadge key={tag} tag={tag} />)}
-          </div>
-        )}
-        <button onClick={() => onViewDetails(donation.id)} className="card-cta mt-auto pt-4">
-          View details <span aria-hidden>→</span>
-        </button>
-      </div>
-    </motion.div>
-  );
-}
 
 function DonationFeed({
-  donations, impactDonations, pickupRequests, users, onViewDetails,
+  donations, impactDonations, pickupRequests, users, currentUser, onCreate, onViewDetails,
   filterCity, setFilterCity,
   filterDietary, setFilterDietary,
   filterStatus, setFilterStatus,
@@ -1269,6 +1216,8 @@ function DonationFeed({
   impactDonations?: DonationWithDistance[];
   pickupRequests?: PickupRequest[];
   users: User[];
+  currentUser?: User | null;
+  onCreate: () => void;
   onViewDetails: (id: number) => void;
   filterCity: string; setFilterCity: (v: string) => void;
   filterDietary: DietaryTag | ''; setFilterDietary: (v: DietaryTag | '') => void;
@@ -1305,67 +1254,11 @@ function DonationFeed({
 
   return (
     <div>
-      {/* ── Feed hero panel ── */}
-      <motion.div
-        className="hero-panel mb-8"
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      >
-        {/* Decorative blobs — CSS only */}
-        <div className="hero-panel-bg-blob" style={{ width: 280, height: 280, background: 'radial-gradient(circle, rgba(238,156,90,0.18) 0%, transparent 70%)', top: '-60px', right: '5%' }} />
-        <div className="hero-panel-bg-blob" style={{ width: 200, height: 200, background: 'radial-gradient(circle, rgba(143,176,145,0.20) 0%, transparent 70%)', bottom: '-40px', left: '3%' }} />
-
-        <div className="relative hero-content-grid">
-          {/* Text block */}
-          <motion.div
-            className="hero-copy"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <span className="hero-pill">🌿 Community food sharing</span>
-            <h1 className="page-title mb-3" style={{ fontSize: 'clamp(26px, 3.5vw, 40px)' }}>
-              Fresh food,<br className="hidden sm:block" /> shared nearby.
-            </h1>
-            <p className="page-subtitle mb-5" style={{ maxWidth: 480 }}>
-              Discover fresh food nearby, shared freely by your community.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <span className="trust-chip">🔒 Privacy-first</span>
-              <span className="trust-chip">📍 Israel-wide</span>
-              <span className="trust-chip">♻️ Reduce food waste</span>
-            </div>
-          </motion.div>
-
-          {/* Community impact — calculated from the current frontend data */}
-          <motion.div
-            className="impact-panel"
-            initial="hidden"
-            animate="visible"
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08, delayChildren: 0.3 } } }}
-          >
-            <div className="impact-panel-header">
-              <div>
-                <h2 className="impact-panel-title">Community impact</h2>
-                <p className="impact-panel-copy">Every pickup helps reduce waste and support neighbors.</p>
-              </div>
-            </div>
-            <div className="impact-stats-grid">
-              {impactItems.map(({ value, label }) => (
-                <motion.div
-                  key={label}
-                  className="impact-stat"
-                  variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } } }}
-                >
-                  <span className="impact-stat-value">{value}</span>
-                  <span className="impact-stat-label">{label}</span>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </motion.div>
+      <FeedHero
+        greetingName={currentUser?.displayName}
+        impact={impactItems}
+        onCreate={onCreate}
+      />
 
       {/* ── Filter / search bar ── */}
       <div className="filter-card mb-8">
@@ -1434,7 +1327,7 @@ function DonationFeed({
           onAction={hasFeedFilters ? resetFeedFilters : undefined}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div id="cc-feed-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {visible.map((d, idx) => {
             const donor = users.find(u => u.id === d.donorId);
             if (!donor) return null;
@@ -1514,96 +1407,142 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
 
   return (
     <div>
-      <div className="breadcrumb">
-        <button onClick={onBack} className="breadcrumb-link">Home</button>
-        <span>/</span>
-        <span className="breadcrumb-current">Donation Details</span>
-      </div>
-      <motion.div
-        className="details-lifecycle"
+      <button onClick={onBack} className="cc-back" aria-label="Back to feed">
+        <span aria-hidden="true">←</span>
+        <span>Back to the feed</span>
+      </button>
+
+      <motion.header
+        className="cc-details-header"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="cc-details-meta">
+          <span className="cc-details-meta-num">№ {String(donation.id).padStart(2, '0')}</span>
+          <span className="cc-details-meta-dot" />
+          <span className="cc-details-meta-city">{donation.city}</span>
+          {'distanceKm' in donation && typeof (donation as DonationWithDistance).distanceKm === 'number' && (
+            <>
+              <span className="cc-details-meta-dot" />
+              <span className="cc-details-meta-distance">{(donation as DonationWithDistance).distanceKm!.toFixed(1)} km away</span>
+            </>
+          )}
+        </div>
+        <h1 className="cc-details-title">{donation.title}</h1>
+        {donation.foodType && (
+          <p className="cc-details-kicker">{donation.foodType} · from {donor.displayName.split(' ')[0]}'s kitchen</p>
+        )}
+      </motion.header>
+
+      <motion.ol
+        className="cc-lifecycle"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
         aria-label="Donation lifecycle"
       >
         {lifecycleItems.map((item, index) => (
-          <div
+          <li
             key={item.label}
-            className={`details-lifecycle-step ${item.complete ? 'is-complete' : ''} ${item.active ? 'is-active' : ''}`}
+            className={`cc-lifecycle-step ${item.complete ? 'is-complete' : ''} ${item.active ? 'is-active' : ''}`}
+            aria-current={item.active ? 'step' : undefined}
           >
-            <span className="details-lifecycle-dot">{item.complete ? '✓' : index + 1}</span>
-            <span className="details-lifecycle-label">{item.label}</span>
-          </div>
+            <span className="cc-lifecycle-num" aria-hidden="true">
+              {item.complete ? '✓' : String(index + 1).padStart(2, '0')}
+            </span>
+            <span className="cc-lifecycle-label">{item.label}</span>
+            {index < lifecycleItems.length - 1 && <span className="cc-lifecycle-rule" aria-hidden="true" />}
+          </li>
         ))}
-      </motion.div>
+      </motion.ol>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <div>
-          <div className="card-image-large mb-6">
+          <motion.div
+            layoutId={`donation-photo-${donation.id}`}
+            className="cc-details-photo"
+            transition={{
+              layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+              default: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+            }}
+          >
             <DonationImage url={donation.imageUrl} foodType={donation.foodType} seedId={donation.id} large />
-            <div className="image-badge">
+            <div className="cc-details-photo-status">
               <StatusBadge status={donation.status} />
             </div>
-          </div>
+          </motion.div>
           <motion.div
-            className="card details-overview-card p-6"
+            className="cc-panel"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.36, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.36, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="mb-4">
-              <div className="eyebrow mb-1">{donation.foodType}</div>
-              <h1 className="details-title">{donation.title}</h1>
-              <div className="details-chip-row mt-4">
-                <span className="info-pill"><span className="info-pill-label">Qty</span><span className="info-pill-value">{donation.quantity}</span></span>
-                <span className="info-pill"><span className="info-pill-label">City</span><span className="info-pill-value">{donation.city}</span></span>
-                <span className="info-pill"><span className="info-pill-label">Expires</span><span className="info-pill-value">{formatDateTime(donation.expiryDate)}</span></span>
-                {'distanceKm' in donation && typeof (donation as DonationWithDistance).distanceKm === 'number' && (
-                  <span className="info-pill"><span className="info-pill-label">Distance</span><span className="info-pill-value">{(donation as DonationWithDistance).distanceKm!.toFixed(1)} km</span></span>
-                )}
+            <dl className="cc-pillstrip">
+              <div className="cc-pill">
+                <dt>Quantity</dt>
+                <dd>{donation.quantity}</dd>
               </div>
-            </div>
-            <div className="space-y-4 mb-6">
-              <div><div className="detail-label">Description</div><div className="detail-value">{donation.description}</div></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><div className="detail-label">Food Type</div><div className="detail-value">{donation.foodType}</div></div>
-                <div><div className="detail-label">Quantity</div><div className="detail-value">{donation.quantity}</div></div>
+              <div className="cc-pill">
+                <dt>City</dt>
+                <dd>{donation.city}</dd>
               </div>
-              <div><div className="detail-label">Expiry Date</div><div className="detail-value">{formatDateTime(donation.expiryDate)}</div></div>
-              {donation.dietaryTags.length > 0 && (
-                <div><div className="detail-label">Dietary Tags</div><div className="flex gap-2 flex-wrap">{donation.dietaryTags.map(tag => <DietaryTagBadge key={tag} tag={tag} />)}</div></div>
+              <div className="cc-pill">
+                <dt>Expires</dt>
+                <dd>{formatDateTime(donation.expiryDate)}</dd>
+              </div>
+              {'distanceKm' in donation && typeof (donation as DonationWithDistance).distanceKm === 'number' && (
+                <div className="cc-pill">
+                  <dt>Distance</dt>
+                  <dd>{(donation as DonationWithDistance).distanceKm!.toFixed(1)} km</dd>
+                </div>
               )}
-              <div>
-                <div className="detail-label">Pickup Location</div>
-                <div className={`details-privacy-state ${canSeeAddress ? 'is-unlocked' : ''}`}>
-                  <div>
-                    <div className="details-privacy-title">{privacyTitle}</div>
-                    <div className="details-privacy-copy">{privacyCopy}</div>
-                  </div>
-                  <div className="details-privacy-meta">
-                    {canSeeAddress ? 'Exact address visible' : 'Exact address hidden'}
-                  </div>
+            </dl>
+
+            <section className="cc-field">
+              <Eyebrow size="sm">About this share</Eyebrow>
+              <p className="cc-field-value">{donation.description}</p>
+            </section>
+
+            {donation.dietaryTags.length > 0 && (
+              <section className="cc-field">
+                <Eyebrow size="sm">Dietary</Eyebrow>
+                <div className="flex gap-2 flex-wrap">
+                  {donation.dietaryTags.map((tag) => <DietaryTagBadge key={tag} tag={tag} />)}
                 </div>
-                <div className="flex items-start gap-2 mb-3">
-                  <span className="text-lg" aria-hidden="true">📍</span>
-                  <div>
-                    <div className="detail-value">
-                      {formatDonationAddress(donation, canSeeAddress)}
+              </section>
+            )}
+
+            <section className="cc-field">
+              <Eyebrow size="sm">Pickup location</Eyebrow>
+              <div className={`cc-privacy ${canSeeAddress ? 'is-unlocked' : ''}`}>
+                <Icon.Lock size={16} />
+                <div className="cc-privacy-text">
+                  <div className="cc-privacy-title">{privacyTitle}</div>
+                  <div className="cc-privacy-copy">{privacyCopy}</div>
+                </div>
+                <span className="cc-privacy-meta">
+                  {canSeeAddress ? 'Exact visible' : 'Exact hidden'}
+                </span>
+              </div>
+              <div className="cc-location-row">
+                <Icon.Pin size={18} />
+                <div>
+                  <div className="cc-field-value">{formatDonationAddress(donation, canSeeAddress)}</div>
+                  {canSeeAddress && donation.formattedAddress && (
+                    <div className="cc-field-note">{donation.formattedAddress}</div>
+                  )}
+                  {canSeeAddress && donation.pickupNotes && (
+                    <div className="cc-field-note">Note from the donor — {donation.pickupNotes}</div>
+                  )}
+                  {!canSeeAddress && (
+                    <div className="cc-field-note">
+                      {isPendingRequester
+                        ? 'Exact pickup location confirmed after the donor approves your request.'
+                        : 'Exact address shared once your request is approved.'}
                     </div>
-                    {canSeeAddress && donation.formattedAddress && (
-                      <div className="text-[12px] text-[#8a9b8c] mt-0.5">{donation.formattedAddress}</div>
-                    )}
-                    {canSeeAddress && donation.pickupNotes && (
-                      <div className="detail-privacy mt-1">📝 {donation.pickupNotes}</div>
-                    )}
-                    {!canSeeAddress && (
-                      <div className="detail-privacy">
-                        {isPendingRequester
-                          ? 'Exact pickup location confirmed after the donor approves your request'
-                          : 'Exact address shared after your request is approved'}
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
+              </div>
 
                 {/* Area map: shown before approval (public/pending) OR as fallback when revealed
                     but exact coords are unavailable (donor/approved in local/demo mode).
@@ -1649,150 +1588,206 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-            <div className="donor-section">
-              <div className="detail-label mb-3">Donor</div>
-              <div className="details-donor-card">
-                <div className="donor-avatar">👤</div>
-                <div className="flex-1">
-                  <div className="donor-name">{donor.displayName}</div>
-                  <div className="flex items-center gap-1 text-sm">
-                    {[...Array(5)].map((_, i) => <span key={i} className={i < Math.floor(donor.rating) ? 'star-filled' : 'star-empty'}>⭐</span>)}
-                    <span className="rating-value ml-1">{donor.rating.toFixed(1)}</span>
-                    <span className="rating-count">({donor.reviewCount} reviews)</span>
+            </section>
+
+            <section className="cc-field cc-donor">
+              <Eyebrow size="sm">Donor</Eyebrow>
+              <div className="cc-donor-row">
+                <span className="cc-donor-avatar" aria-hidden="true">
+                  {donor.displayName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+                </span>
+                <div className="cc-donor-body">
+                  <div className="cc-donor-name">{donor.displayName}</div>
+                  <div className="cc-donor-rating" aria-label={`Rating: ${donor.rating.toFixed(1)} of 5 from ${donor.reviewCount} reviews`}>
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <Icon.Dot key={i} size={10} filled={i < Math.round(donor.rating)} />
+                    ))}
+                    <span className="cc-donor-rating-value">{donor.rating.toFixed(1)}</span>
+                    <span className="cc-donor-rating-count">· {donor.reviewCount} {donor.reviewCount === 1 ? 'review' : 'reviews'}</span>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
           </motion.div>
         </div>
-        <div className="details-side-stack">
-          <motion.div
-            className="details-next-card"
+        <div className="cc-side-stack">
+          <motion.section
+            className="cc-side-card cc-side-card--next"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.36, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.36, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="details-next-kicker">What happens next</div>
-            <div className="details-next-copy">{nextMessage}</div>
-          </motion.div>
+            <Eyebrow size="sm">What happens next</Eyebrow>
+            <p className="cc-side-card-lede">{nextMessage}</p>
+          </motion.section>
+
           {isOwnDonation ? (
             /* ── Donor: viewing their own listing ── */
-            <div className="card p-8 text-center">
-              <div className="empty-icon">🏠</div>
-              <div className="font-semibold text-[#1c3520] mb-2">This is your listing</div>
-              <div className="empty-text">Manage it from your My Donations dashboard.</div>
-            </div>
+            <section className="cc-side-card cc-side-card--info">
+              <span className="cc-side-card-glyph" aria-hidden="true">
+                <Icon.Plate size={20} />
+              </span>
+              <Eyebrow size="sm">Your listing</Eyebrow>
+              <h2 className="cc-side-card-title">This donation is yours.</h2>
+              <p className="cc-side-card-copy">Manage it from your My donations dashboard.</p>
+            </section>
 
           ) : isApprovedRequester ? (
             /* ── Viewer has an approved or completed request ── */
-            <div className="card p-6">
-              <div className="eyebrow mb-1">Your reservation</div>
-              <h2 className="section-title mb-4">
-                {viewerRequest!.status === 'completed' ? 'Pickup complete' : 'Approved — ready for pickup'}
+            <section className="cc-side-card">
+              <Eyebrow size="sm">Your reservation</Eyebrow>
+              <h2 className="cc-side-card-title">
+                {viewerRequest!.status === 'completed' ? 'Pickup complete.' : 'Approved — ready for pickup.'}
               </h2>
-              <div className={`mb-5 text-center font-semibold text-[14px] rounded-xl px-4 py-3 ${viewerRequest!.status === 'completed' ? 'status-completed-badge' : 'status-approved-badge'}`}>
-                {viewerRequest!.status === 'completed' ? '✓ You picked this up' : '✓ Pickup approved'}
+              <div className={`cc-side-stamp cc-side-stamp--${viewerRequest!.status === 'completed' ? 'completed' : 'approved'}`}>
+                <Icon.Check size={14} />
+                <span>{viewerRequest!.status === 'completed' ? 'You picked this up' : 'Pickup approved'}</span>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <div className="detail-label">Pickup time</div>
-                  <div className="detail-value">{formatDateTime(viewerRequest!.pickupTime)}</div>
+              <dl className="cc-side-fields">
+                <div className="cc-side-field">
+                  <dt>Pickup time</dt>
+                  <dd>{formatDateTime(viewerRequest!.pickupTime)}</dd>
                 </div>
                 {viewerRequest!.notes && (
-                  <div>
-                    <div className="detail-label">Your notes</div>
-                    <div className="detail-value">{viewerRequest!.notes}</div>
+                  <div className="cc-side-field">
+                    <dt>Your notes</dt>
+                    <dd>{viewerRequest!.notes}</dd>
                   </div>
                 )}
                 {viewerRequest!.discreetPickup && (
-                  <span className="privacy-badge mt-1">🔒 Discreet pickup arranged</span>
-                )}
-              </div>
-              {viewerRequest!.status === 'approved' && (
-                <div className="mt-5 pt-5 border-t border-zinc-100">
-                  <div className="text-[13px] text-[#4b5d4d] leading-relaxed">
-                    {hasExactCoords
-                      ? 'The exact pickup address and map are shown on the left. Head over at your agreed time.'
-                      : 'The pickup address is shown on the left. Note: an exact map is unavailable — this donation uses an approximate location only.'}
+                  <div className="cc-side-field">
+                    <dt>Privacy</dt>
+                    <dd className="cc-side-field-privacy">
+                      <Icon.Lock size={12} /> Discreet pickup arranged
+                    </dd>
                   </div>
-                </div>
+                )}
+              </dl>
+              {viewerRequest!.status === 'approved' && (
+                <p className="cc-side-card-foot">
+                  {hasExactCoords
+                    ? 'The exact pickup address and map are shown on the left. Head over at your agreed time.'
+                    : 'The pickup address is shown on the left. An exact map is unavailable — this donation uses an approximate location only.'}
+                </p>
               )}
-            </div>
+            </section>
 
           ) : isPendingRequester ? (
             /* ── Viewer has a pending request ── */
-            <div className="card p-6">
-              <div className="eyebrow mb-1">Your request</div>
-              <h2 className="section-title mb-4">Awaiting approval</h2>
-              <div className="alert-pending w-full justify-center mb-5">
-                ⏳ Waiting for the donor to approve
+            <section className="cc-side-card">
+              <Eyebrow size="sm">Your request</Eyebrow>
+              <h2 className="cc-side-card-title">Awaiting approval.</h2>
+              <div className="cc-side-stamp cc-side-stamp--pending">
+                <span className="cc-side-stamp-dot" aria-hidden="true" />
+                <span>Waiting for the donor</span>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <div className="detail-label">Requested pickup time</div>
-                  <div className="detail-value">{formatDateTime(viewerRequest!.pickupTime)}</div>
+              <dl className="cc-side-fields">
+                <div className="cc-side-field">
+                  <dt>Requested pickup time</dt>
+                  <dd>{formatDateTime(viewerRequest!.pickupTime)}</dd>
                 </div>
                 {viewerRequest!.notes && (
-                  <div>
-                    <div className="detail-label">Your notes</div>
-                    <div className="detail-value">{viewerRequest!.notes}</div>
+                  <div className="cc-side-field">
+                    <dt>Your notes</dt>
+                    <dd>{viewerRequest!.notes}</dd>
                   </div>
                 )}
                 {viewerRequest!.discreetPickup && (
-                  <span className="privacy-badge mt-1">🔒 Discreet pickup requested</span>
+                  <div className="cc-side-field">
+                    <dt>Privacy</dt>
+                    <dd className="cc-side-field-privacy">
+                      <Icon.Lock size={12} /> Discreet pickup requested
+                    </dd>
+                  </div>
                 )}
-              </div>
-              <div className="mt-5 pt-5 border-t border-zinc-100 text-[13px] text-[#6b7d6e] leading-relaxed">
-                The exact pickup address will be shown here once the donor approves your request.
+              </dl>
+              <p className="cc-side-card-foot">
+                The exact pickup address will appear here once the donor approves.
                 {isVerifiedArea
                   ? ' The map on the left shows the approximate neighborhood.'
-                  : ' The map on the left shows the approximate area — this donation\'s location has not been precisely verified.'}
-              </div>
-            </div>
+                  : ' The map on the left shows the approximate area — this donation has not been precisely verified.'}
+              </p>
+            </section>
 
           ) : donation.status !== 'available' ? (
             /* ── Donation reserved/closed, viewer has no active request ── */
-            <div className="card p-8 text-center">
-              <div className="empty-icon">🔒</div>
-              <div className="font-semibold text-[#1c3520] mb-2">
-                {donation.status === 'reserved' ? 'Already reserved' : 'No longer available'}
-              </div>
-              <div className="empty-text">This donation has already been claimed. Check the feed for other listings nearby.</div>
-            </div>
+            <section className="cc-side-card cc-side-card--info">
+              <span className="cc-side-card-glyph" aria-hidden="true">
+                <Icon.Lock size={20} />
+              </span>
+              <Eyebrow size="sm">Closed</Eyebrow>
+              <h2 className="cc-side-card-title">
+                {donation.status === 'reserved' ? 'Already reserved.' : 'No longer available.'}
+              </h2>
+              <p className="cc-side-card-copy">
+                This donation has been claimed. Check the feed for other listings nearby.
+              </p>
+            </section>
 
           ) : (
             /* ── Available for pickup request ── */
-            <div className="card p-6">
-              <div className="eyebrow mb-1">Pickup request</div>
-              <h2 className="section-title mb-5">Reserve this donation</h2>
-              <div className="space-y-5">
-                <div>
-                  <label htmlFor="dd-time" className="form-label">Preferred Pickup Time <span className="text-red-600" aria-hidden>*</span></label>
-                  <input id="dd-time" type="datetime-local" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} className="input-field" aria-required="true" />
+            <section className="cc-side-card cc-side-card--form">
+              <Eyebrow size="sm">Pickup request</Eyebrow>
+              <h2 className="cc-side-card-title">
+                Reserve this <em className="cc-italic">donation.</em>
+              </h2>
+              <p className="cc-side-card-lede">
+                Pick a time. The donor will approve, decline, or message you back.
+              </p>
+              <div className="cc-side-form">
+                <div className="cc-side-field-input">
+                  <label htmlFor="dd-time" className="cc-side-label">
+                    Preferred pickup time
+                    <span className="cc-side-required" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id="dd-time"
+                    type="datetime-local"
+                    value={pickupTime}
+                    onChange={(e) => setPickupTime(e.target.value)}
+                    className="cc-side-input"
+                    aria-required="true"
+                  />
                 </div>
-                <div>
-                  <label htmlFor="dd-notes" className="form-label">Notes</label>
-                  <textarea id="dd-notes" rows={4} placeholder="Add any special requests or notes for the donor…" value={notes} onChange={(e) => setNotes(e.target.value)} className="input-field resize-none" />
+                <div className="cc-side-field-input">
+                  <label htmlFor="dd-notes" className="cc-side-label">Notes</label>
+                  <textarea
+                    id="dd-notes"
+                    rows={4}
+                    placeholder="Add any special requests or notes for the donor…"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="cc-side-input cc-side-textarea"
+                  />
                 </div>
                 {donation.allowDiscreet && (
-                  <div className="privacy-option">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input type="checkbox" checked={discreetPickup} onChange={(e) => setDiscreetPickup(e.target.checked)} className="mt-1 w-4 h-4" />
-                      <div>
-                        <div className="privacy-label">Request discreet pickup</div>
-                        <div className="privacy-desc">Donor will share pickup instructions privately after approval</div>
-                      </div>
-                    </label>
-                  </div>
+                  <label className="cc-side-privacy">
+                    <input
+                      type="checkbox"
+                      checked={discreetPickup}
+                      onChange={(e) => setDiscreetPickup(e.target.checked)}
+                      className="cc-side-checkbox"
+                    />
+                    <span className="cc-side-privacy-body">
+                      <span className="cc-side-privacy-title">Request discreet pickup</span>
+                      <span className="cc-side-privacy-copy">Donor will share instructions privately after approval.</span>
+                    </span>
+                  </label>
                 )}
-                <button onClick={handleSubmit} className="btn-primary w-full">Send Pickup Request</button>
-                <div className="text-[12px] text-[#8a9b8c] text-center">
-                  Exact address revealed after the donor approves
-                </div>
+                <motion.button
+                  onClick={handleSubmit}
+                  className="cc-cta-primary cc-cta-primary--lg cc-cta-primary--full"
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span>Send pickup request</span>
+                  <Icon.ArrowRight size={16} />
+                </motion.button>
+                <p className="cc-side-card-foot cc-side-card-foot--center">
+                  Exact address revealed after the donor approves.
+                </p>
               </div>
-            </div>
+            </section>
           )}
           {primaryReview && (
             <motion.div
@@ -1843,10 +1838,144 @@ const CREATE_DONATION_STEPS = [
   'Review & Publish',
 ];
 
+/**
+ * Live preview of how this donation will appear to recipients.
+ * Pure presentation: reads only the form's current state, no API.
+ * Mirrors the look of DonationCard at a smaller scale so the donor can
+ * see exactly what they're publishing as they type.
+ */
+function CreateDonationPreview({
+  title,
+  description,
+  foodType,
+  quantity,
+  expiryDate,
+  dietaryTags,
+  city,
+  imageData,
+}: {
+  title: string;
+  description: string;
+  foodType: string;
+  quantity: string;
+  expiryDate: string;
+  dietaryTags: DietaryTag[];
+  city: string;
+  imageData: string | null;
+}) {
+  // Tiny placeholder if nothing has been typed yet
+  const hasContent = !!(title || description || foodType || city || imageData);
+
+  // Approximate "expires in" hint for the preview ring
+  let expiryLabel: string | null = null;
+  let expiryProgress = 1;
+  if (expiryDate) {
+    const target = new Date(expiryDate).getTime();
+    if (!Number.isNaN(target)) {
+      const hours = Math.max(0, (target - Date.now()) / 36e5);
+      expiryProgress = Math.max(0, Math.min(1, hours / 48));
+      expiryLabel = hours < 1 ? '<1h' : hours < 24 ? `${Math.round(hours)}h` : `${Math.round(hours / 24)}d`;
+    }
+  }
+
+  const dietaryLabels: Record<DietaryTag, string> = {
+    kosher: 'Kosher',
+    gluten_free: 'Gluten-free',
+    vegan: 'Vegan',
+    vegetarian: 'Vegetarian',
+  };
+
+  return (
+    <motion.section
+      className="cc-preview"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.42, delay: 0.06, ease: [0.22, 1, 0.36, 1] }}
+      aria-label="Live preview of how your donation will appear"
+    >
+      <header className="cc-preview-head">
+        <Eyebrow size="sm">Live preview</Eyebrow>
+        <span className="cc-preview-head-pip" aria-hidden="true" />
+        <span className="cc-preview-head-meta">As neighbors will see it</span>
+      </header>
+
+      <div className="cc-preview-card">
+        <div className="cc-preview-image">
+          {imageData ? (
+            <img src={imageData} alt="" />
+          ) : (
+            <div className="cc-preview-plate">
+              <svg viewBox="0 0 80 80" width="56" height="56" aria-hidden="true">
+                <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(28,53,32,0.18)" strokeWidth="2" />
+                <circle cx="40" cy="40" r="18" fill="none" stroke="rgba(28,53,32,0.18)" strokeWidth="2" />
+              </svg>
+              <span className="cc-preview-plate-text">{foodType || 'Your photo'}</span>
+            </div>
+          )}
+          <span className="cc-preview-status">
+            <span className="cc-preview-status-dot" />
+            Available
+          </span>
+          {expiryLabel && (
+            <span className="cc-preview-arc" aria-label={`Expires in ${expiryLabel}`}>
+              <svg viewBox="0 0 36 36" width={36} height={36}>
+                <circle cx="18" cy="18" r="14.5" fill="none" stroke="rgba(28,53,32,0.16)" strokeWidth="3" />
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="14.5"
+                  fill="none"
+                  stroke={expiryProgress > 0.66 ? 'var(--forest-500)' : expiryProgress > 0.33 ? 'var(--ember-400)' : 'var(--ember-pop)'}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={`${(2 * Math.PI * 14.5) * expiryProgress} ${(2 * Math.PI * 14.5)}`}
+                  transform="rotate(-90 18 18)"
+                />
+              </svg>
+              <span className="cc-preview-arc-label">{expiryLabel}</span>
+            </span>
+          )}
+        </div>
+
+        <div className="cc-preview-body">
+          <div className="cc-preview-eyebrow">
+            <span className="cc-preview-eyebrow-num">№ —</span>
+            <span className="cc-preview-eyebrow-dot" />
+            <span>{city || 'Your city'}</span>
+          </div>
+          <h4 className="cc-preview-title">{title || 'Your donation title…'}</h4>
+          {foodType && <p className="cc-preview-type">{foodType}</p>}
+          <p className="cc-preview-desc">
+            {description
+              ? (description.length > 110 ? description.slice(0, 110) + '…' : description)
+              : <span className="cc-preview-desc-ghost">Your description preview will appear here as you type.</span>}
+          </p>
+          <div className="cc-preview-meta">
+            {quantity && (
+              <span className="cc-preview-meta-pill">
+                <Icon.Plate size={12} /> {quantity}
+              </span>
+            )}
+            {dietaryTags.map((t) => (
+              <span key={t} className="cc-preview-tag">{dietaryLabels[t] ?? t}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <p className="cc-preview-foot">
+        {hasContent
+          ? 'This updates as you type. Exact address stays private until you approve a request.'
+          : 'Start filling the form — this preview will fill in live.'}
+      </p>
+    </motion.section>
+  );
+}
+
 function CreateDonationStepper({ currentStep = 1 }: { currentStep?: number }) {
   return (
     <motion.ol
-      className="create-stepper"
+      className="cc-step-rail"
       aria-label="Create donation publishing steps"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -1859,11 +1988,14 @@ function CreateDonationStepper({ currentStep = 1 }: { currentStep?: number }) {
         return (
           <li
             key={label}
-            className={`create-stepper-item ${isActive ? 'is-active' : ''} ${isComplete ? 'is-complete' : ''}`}
+            className={`cc-step ${isActive ? 'is-active' : ''} ${isComplete ? 'is-complete' : ''}`}
             aria-current={isActive ? 'step' : undefined}
           >
-            <span className="create-stepper-number">{stepNumber}</span>
-            <span className="create-stepper-label">{label}</span>
+            <span className="cc-step-num" aria-hidden="true">
+              {isComplete ? '✓' : String(stepNumber).padStart(2, '0')}
+            </span>
+            <span className="cc-step-label">{label}</span>
+            {index < CREATE_DONATION_STEPS.length - 1 && <span className="cc-step-rule" aria-hidden="true" />}
           </li>
         );
       })}
@@ -1904,6 +2036,13 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
       alert('Please fill in all required fields before checking the location');
       return;
     }
+    if (IS_UI_PREVIEW) {
+      // Skip the real /api/geocode/preview call — return a synthetic
+      // high-confidence preview so the confirm step renders end-to-end.
+      setGeoPreview(syntheticGeocodePreview(street, houseNumber, city));
+      setStep('preview');
+      return;
+    }
     setGeoLoading(true);
     setGeoError(null);
     try {
@@ -1933,11 +2072,20 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
   if (step === 'preview' && geoPreview) {
     return (
       <div>
-        <div className="mb-8">
-          <div className="eyebrow mb-2">Confirm location</div>
-          <h1 className="page-title">Verify pickup spot.</h1>
-          <p className="page-subtitle">Requesters see only the approximate neighborhood. Exact address is revealed to approved recipients only.</p>
-        </div>
+        <header className="cc-create-header">
+          <div className="cc-create-meta">
+            <span className="cc-create-meta-num">№ 04</span>
+            <span className="cc-create-meta-dot" />
+            <span>Final review</span>
+          </div>
+          <h1 className="cc-create-title">
+            Verify the <em className="cc-italic">pickup spot.</em>
+          </h1>
+          <p className="cc-create-lede">
+            Requesters see only the approximate neighborhood. The exact address
+            is revealed to approved recipients only — never to passers-by.
+          </p>
+        </header>
         <CreateDonationStepper currentStep={4} />
         <LocationConfirmStep
           street={street} houseNumber={houseNumber} city={city} pickupNotes={pickupNotes}
@@ -1953,11 +2101,21 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
   // ── Step 1: Form ──
   return (
     <div>
-      <div className="mb-8">
-        <div className="eyebrow mb-2">New listing</div>
-        <h1 className="page-title">Share surplus food.</h1>
-        <p className="page-subtitle">A few details and your neighbors can reserve it within minutes.</p>
-      </div>
+      <header className="cc-create-header">
+        <div className="cc-create-meta">
+          <span className="cc-create-meta-num">№ 01</span>
+          <span className="cc-create-meta-dot" />
+          <span>A new listing</span>
+        </div>
+        <h1 className="cc-create-title">
+          Share <em className="cc-italic">surplus food</em>
+          <br />with your neighborhood.
+        </h1>
+        <p className="cc-create-lede">
+          A few details and your neighbors can reserve it within minutes —
+          discreet pickup, privacy by default.
+        </p>
+      </header>
       <CreateDonationStepper currentStep={1} />
       <div className="create-form-grid">
         <div className="create-form-main">
@@ -2091,6 +2249,18 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
           </motion.section>
         </div>
         <div className="create-form-side">
+          {/* Live preview — recipients see this exact card in the feed. */}
+          <CreateDonationPreview
+            title={title}
+            description={description}
+            foodType={foodType}
+            quantity={quantity}
+            expiryDate={expiryDate}
+            dietaryTags={dietaryTags}
+            city={city}
+            imageData={imageData}
+          />
+
           <motion.section
             className="create-section-card create-photo-card"
             initial={{ opacity: 0, y: 12 }}
@@ -2183,19 +2353,20 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
 function DashboardStatGrid({ items }: { items: Array<{ label: string; value: number | string; tone?: string }> }) {
   return (
     <motion.div
-      className="dashboard-stat-grid"
+      className="cc-dash-grid"
       initial="hidden"
       animate="visible"
-      variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
+      variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } } }}
     >
-      {items.map((item) => (
+      {items.map((item, i) => (
         <motion.div
           key={item.label}
-          className={`dashboard-stat-card ${item.tone ? `tone-${item.tone}` : ''}`}
-          variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] } } }}
+          className={`cc-dash-cell ${item.tone ? `cc-dash-cell--${item.tone}` : ''}`}
+          variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] } } }}
         >
-          <div className="dashboard-stat-value">{item.value}</div>
-          <div className="dashboard-stat-label">{item.label}</div>
+          <div className="cc-dash-marker" aria-hidden="true">0{i + 1}</div>
+          <div className="cc-dash-value"><CountUp value={item.value} duration={720} /></div>
+          <div className="cc-dash-label">{item.label}</div>
         </motion.div>
       ))}
     </motion.div>
@@ -2205,15 +2376,21 @@ function DashboardStatGrid({ items }: { items: Array<{ label: string; value: num
 function DashboardEmptyState({ title, message, action }: { title: string; message: string; action?: string }) {
   return (
     <motion.div
-      className="dashboard-empty-state"
+      className="cc-empty"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="dashboard-empty-icon" aria-hidden="true">🍽</div>
-      <h3 className="dashboard-empty-title">{title}</h3>
-      <p className="dashboard-empty-copy">{message}</p>
-      {action && <div className="dashboard-empty-action">{action}</div>}
+      <div className="cc-empty-glyph" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="12" r="5" />
+        </svg>
+      </div>
+      <Eyebrow size="sm" tone="var(--ink-faint)">No activity yet</Eyebrow>
+      <h3 className="cc-empty-title">{title}</h3>
+      <p className="cc-empty-copy">{message}</p>
+      {action && <div className="cc-empty-note">{action}</div>}
     </motion.div>
   );
 }
@@ -2271,12 +2448,50 @@ function MyDonations({ donations, requests, reviews = [], users, onViewDetails, 
 
   return (
     <div>
-      <div className="dashboard-hero mb-6">
-        <div className="eyebrow mb-2">Donor dashboard</div>
-        <h1 className="page-title">My donations.</h1>
-        <p className="page-subtitle">Track your active listings and respond to incoming pickup requests.</p>
-      </div>
+      <header className="cc-page-header">
+        <div className="cc-page-meta">
+          <span className="cc-page-meta-num">№ 02</span>
+          <span className="cc-page-meta-dot" />
+          <span>Donor dashboard</span>
+        </div>
+        <h1 className="cc-page-title">My donations.</h1>
+        <p className="cc-page-lede">Track your active listings and respond to incoming pickup requests from neighbors.</p>
+      </header>
       <DashboardStatGrid items={donationStats} />
+
+      {/* Contextual action card — single, calm, editorial. Replaces the
+          repeated per-row alert-pending strips as the primary "you have work"
+          signal. Per-row context still lives inside each donation row. */}
+      <AnimatePresence initial={false}>
+        {pendingRequests > 0 && (
+          <motion.div
+            key="action-card"
+            className="cc-action-card"
+            role="region"
+            aria-label="Action needed"
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98, transition: { duration: 0.22, ease: ease.snap } }}
+            transition={{ duration: dur.mid, ease: ease.soft }}
+          >
+            <div className="cc-action-card-meta">
+              <span className="cc-action-card-dot" aria-hidden="true" />
+              <span>Action needed</span>
+            </div>
+            <div className="cc-action-card-body">
+              <h2 className="cc-action-card-title">
+                {pendingRequests === 1 ? 'One neighbor is waiting.' : `${pendingRequests} neighbors are waiting.`}
+              </h2>
+              <p className="cc-action-card-copy">
+                {pendingRequests === 1
+                  ? 'A pickup request needs your approval. Scroll to the matching listing below to approve or decline.'
+                  : `${pendingRequests} pickup requests are awaiting your approval. Open each listing below to respond.`}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {(pendingRequests === 0 || completedPickups === 0) && donations.length > 0 && (
         <div className="empty-signal-grid">
           {pendingRequests === 0 && (
@@ -2326,44 +2541,73 @@ function MyDonations({ donations, requests, reviews = [], users, onViewDetails, 
                   </div>
                   <div className="md:col-span-6 row-body">
                     <div className="mb-4">
-                      <div className="eyebrow mb-1">{d.foodType}</div>
-                      <h3 className="row-title">{d.title}</h3>
-                      <div className="row-meta">{d.city}</div>
+                      <Eyebrow num={idx + 1} size="sm">{d.foodType || 'Listing'}</Eyebrow>
+                      <h3 className="cc-row-title">{d.title}</h3>
+                      <div className="cc-row-sub">
+                        <Icon.Pin size={12} /> <span>{d.city}</span>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                      <span className="info-pill"><span className="info-pill-label">Quantity</span><span className="info-pill-value">{d.quantity}</span></span>
-                      <span className="info-pill"><span className="info-pill-label">Expires</span><span className="info-pill-value">{formatDateTime(d.expiryDate)}</span></span>
-                      <span className="info-pill"><span className="info-pill-label">Requests</span><span className="info-pill-value">{dreqs.length}</span></span>
-                      {expiry && isAvailable && (
-                        <span className={`expiry-pill ${expiry.soon ? 'is-soon' : ''}`}>⏱ {expiry.label}</span>
+                    <dl className="cc-pillstrip cc-row-pillstrip">
+                      <div className="cc-pill"><dt>Quantity</dt><dd>{d.quantity}</dd></div>
+                      <div className="cc-pill"><dt>Expires</dt><dd>{formatDateTime(d.expiryDate)}</dd></div>
+                      <div className="cc-pill"><dt>Requests</dt><dd>{dreqs.length}</dd></div>
+                      {expiry && isAvailable ? (
+                        <div className={`cc-pill cc-pill--expiry ${expiry.soon ? 'is-soon' : ''}`}>
+                          <dt>Window</dt><dd>{expiry.label}</dd>
+                        </div>
+                      ) : (
+                        <div className="cc-pill"><dt>Status</dt><dd className="capitalize">{String(d.status).replace('_', ' ')}</dd></div>
                       )}
-                    </div>
-                    {pendingCount > 0 && <div className="alert-pending mb-4">⚠️ {pendingCount} pending request{pendingCount > 1 ? 's' : ''} awaiting your response</div>}
-                    <div className="dashboard-next-hint mb-4">{donationNextAction(d, pendingCount, completedCount)}</div>
+                    </dl>
+                    <AnimatePresence initial={false}>
+                      {pendingCount > 0 && (
+                        <motion.div
+                          key="row-pending"
+                          className="cc-row-pending"
+                          role="status"
+                          initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -4, scale: 0.96, transition: { duration: 0.2, ease: ease.snap } }}
+                          transition={{ duration: dur.mid, ease: ease.soft }}
+                        >
+                          <span className="cc-row-pending-dot" aria-hidden="true" />
+                          <span>
+                            {pendingCount} pending request{pendingCount > 1 ? 's' : ''} on this listing
+                          </span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    <div className="cc-row-next">{donationNextAction(d, pendingCount, completedCount)}</div>
                     {dreqs.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-zinc-100">
-                        <div className="detail-label mb-3">Incoming requests</div>
-                        <div className="space-y-3">
+                      <div className="cc-row-incoming">
+                        <Eyebrow size="sm">Incoming requests</Eyebrow>
+                        <div className="cc-row-incoming-list">
                           {dreqs.map((r: any) => {
                             const requester = users.find((u: any) => u.id === r.requesterId);
+                            const initials = (requester?.displayName ?? '?')
+                              .split(/\s+/).filter(Boolean).map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
                             return (
-                              <div key={r.id} className={`incoming-request dashboard-request-mini state-${r.status}`}>
-                                <div className="flex items-start gap-3">
-                                  <div className="requester-avatar">👤</div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                              <div key={r.id} className={`cc-incoming cc-incoming--${r.status}`}>
+                                <div className="cc-incoming-row">
+                                  <span className="cc-incoming-avatar" aria-hidden="true">{initials}</span>
+                                  <div className="cc-incoming-body">
+                                    <div className="cc-incoming-head">
                                       <div>
-                                        <div className="font-semibold text-[14px] text-[#1c3520]">{requester?.displayName ?? `User #${r.requesterId}`}</div>
-                                        <div className="text-[13px] text-[#4b5d4d] mt-0.5">Pickup · {formatDateTime(r.pickupTime)}</div>
+                                        <div className="cc-incoming-name">{requester?.displayName ?? `User #${r.requesterId}`}</div>
+                                        <div className="cc-incoming-meta">Pickup · {formatDateTime(r.pickupTime)}</div>
                                       </div>
                                       <StatusBadge status={r.status} />
                                     </div>
-                                    {r.notes && <div className="text-[13px] text-[#4b5d4d] mt-2 leading-relaxed">{r.notes}</div>}
-                                    {r.discreetPickup && <span className="privacy-badge mt-2">🔒 Discreet pickup requested</span>}
+                                    {r.notes && <p className="cc-incoming-note">{r.notes}</p>}
+                                    {r.discreetPickup && (
+                                      <span className="cc-incoming-chip">
+                                        <Icon.Lock size={11} /> Discreet pickup requested
+                                      </span>
+                                    )}
                                     {r.status === 'pending' && (
-                                      <div className="flex gap-2 mt-3">
-                                        <button onClick={() => onApprove(r.id)} className="btn-primary text-[13px] py-1.5 px-3">Approve</button>
-                                        <button onClick={() => { if (confirm('Decline this request?')) onDecline(r.id); }} className="btn-danger text-[13px] py-1.5 px-3">Decline</button>
+                                      <div className="cc-incoming-actions">
+                                        <button onClick={() => onApprove(r.id)} className="cc-action-btn cc-action-btn--primary">Approve</button>
+                                        <button onClick={() => { if (confirm('Decline this request?')) onDecline(r.id); }} className="cc-action-btn cc-action-btn--ghost">Decline</button>
                                       </div>
                                     )}
                                   </div>
@@ -2490,6 +2734,11 @@ function EditDonation({ donation, onBack, onSubmit }: { donation: Donation; onBa
       alert('Please fill in all required fields');
       return;
     }
+    if (IS_UI_PREVIEW) {
+      setGeoPreview(syntheticGeocodePreview(street, houseNumber, city));
+      setStep('preview');
+      return;
+    }
     setGeoLoading(true);
     setGeoError(null);
     try {
@@ -2516,24 +2765,27 @@ function EditDonation({ donation, onBack, onSubmit }: { donation: Donation; onBa
     }
   };
 
-  const breadcrumb = (
-    <div className="breadcrumb">
-      <button onClick={onBack} className="breadcrumb-link">My Donations</button>
-      <span>/</span>
-      <span className="breadcrumb-current">Edit Donation</span>
-    </div>
+  const backButton = (
+    <button onClick={onBack} className="cc-back" aria-label="Back to my donations">
+      <span aria-hidden="true">←</span>
+      <span>Back to my donations</span>
+    </button>
   );
 
   // ── Step 2: Location confirmation (only when address changed) ──
   if (step === 'preview' && geoPreview) {
     return (
       <div>
-        {breadcrumb}
-        <div className="mb-8">
-          <div className="eyebrow mb-2">Confirm new location</div>
-          <h1 className="page-title">Verify updated pickup spot.</h1>
-          <p className="page-subtitle">Address changed — confirm the new location before saving. Requesters see only the approximate neighborhood until you approve their request.</p>
-        </div>
+        {backButton}
+        <header className="cc-create-header">
+          <div className="cc-create-meta">
+            <span className="cc-create-meta-num">№ 05</span>
+            <span className="cc-create-meta-dot" />
+            <span>Confirm new location</span>
+          </div>
+          <h1 className="cc-create-title">Verify the <em className="cc-italic">updated pickup spot.</em></h1>
+          <p className="cc-create-lede">The address changed — confirm the new location before saving. Requesters see only the approximate neighborhood until you approve their request.</p>
+        </header>
         <LocationConfirmStep
           street={street} houseNumber={houseNumber} city={city} pickupNotes={pickupNotes}
           geoPreview={geoPreview}
@@ -2548,12 +2800,16 @@ function EditDonation({ donation, onBack, onSubmit }: { donation: Donation; onBa
   // ── Step 1: Form ──
   return (
     <div>
-      {breadcrumb}
-      <div className="mb-8">
-        <div className="eyebrow mb-2">Edit listing</div>
-        <h1 className="page-title">Update your donation.</h1>
-        <p className="page-subtitle">Refresh the details so neighbors see the latest information.</p>
-      </div>
+      {backButton}
+      <header className="cc-create-header">
+        <div className="cc-create-meta">
+          <span className="cc-create-meta-num">№ 02</span>
+          <span className="cc-create-meta-dot" />
+          <span>Edit listing</span>
+        </div>
+        <h1 className="cc-create-title">Update your <em className="cc-italic">donation.</em></h1>
+        <p className="cc-create-lede">Refresh the details so neighbors see the latest information.</p>
+      </header>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <div className="card p-6 space-y-5">
           <div>
@@ -2718,11 +2974,15 @@ function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus
 
   return (
     <div>
-      <div className="dashboard-hero mb-6">
-        <div className="eyebrow mb-2">Recipient dashboard</div>
-        <h1 className="page-title">My requests.</h1>
-        <p className="page-subtitle">Follow your reservations from request to pickup.</p>
-      </div>
+      <header className="cc-page-header">
+        <div className="cc-page-meta">
+          <span className="cc-page-meta-num">№ 03</span>
+          <span className="cc-page-meta-dot" />
+          <span>Recipient dashboard</span>
+        </div>
+        <h1 className="cc-page-title">My requests.</h1>
+        <p className="cc-page-lede">Follow your reservations from request to pickup — and leave a review once the food is collected.</p>
+      </header>
       <DashboardStatGrid items={requestStats} />
       {(tabCount('approved') === 0 || tabCount('completed') === 0) && requests.length > 0 && (
         <div className="empty-signal-grid">
@@ -2791,24 +3051,31 @@ function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus
                   </div>
                   <div className="md:col-span-6 row-body">
                     <div className="mb-4">
-                      <div className="eyebrow mb-1">{donation.foodType}</div>
-                      <h3 className="row-title">{donation.title}</h3>
-                      <div className="row-meta">From <span className="font-semibold text-[#1c3520]">{donor.displayName}</span></div>
+                      <Eyebrow num={idx + 1} size="sm">{donation.foodType || 'Pickup request'}</Eyebrow>
+                      <h3 className="cc-row-title">{donation.title}</h3>
+                      <div className="cc-row-sub">
+                        From <span className="cc-row-sub-strong">{donor.displayName}</span>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <span className="info-pill"><span className="info-pill-label">Pickup</span><span className="info-pill-value">{formatDateTime(req.pickupTime)}</span></span>
-                      <span className="info-pill"><span className="info-pill-label">📍</span><span className="info-pill-value">{formatDonationAddress(donation, canSeeAddress)}</span></span>
-                      {req.discreetPickup && <span className="privacy-badge">🔒 Discreet</span>}
-                    </div>
+                    <dl className="cc-pillstrip cc-row-pillstrip">
+                      <div className="cc-pill"><dt>Pickup</dt><dd>{formatDateTime(req.pickupTime)}</dd></div>
+                      <div className="cc-pill cc-pill--address"><dt>Location</dt><dd>{formatDonationAddress(donation, canSeeAddress)}</dd></div>
+                      {req.discreetPickup && (
+                        <div className="cc-pill cc-pill--privacy"><dt>Privacy</dt><dd>Discreet pickup</dd></div>
+                      )}
+                    </dl>
                     <RequestLifecycleMini status={req.status} reviewed={reviewed} />
-                    <div className="dashboard-next-hint mt-3">{requestNextStep(req.status, reviewed)}</div>
+                    <div className="cc-row-next">{requestNextStep(req.status, reviewed)}</div>
                     {!canSeeAddress && req.status === 'pending' && (
-                      <div className="text-[12.5px] text-[#8a9b8c] mb-2">Full address shared after the donor approves your request.</div>
+                      <div className="cc-row-privacy-hint">
+                        <Icon.Lock size={11} />
+                        <span>Full address shared after the donor approves your request.</span>
+                      </div>
                     )}
                     {req.notes && (
-                      <div className="mt-3 pt-3 border-t border-zinc-100">
-                        <div className="detail-label mb-1">Your notes</div>
-                        <div className="text-[14px] text-[#1c3520] leading-relaxed">{req.notes}</div>
+                      <div className="cc-row-notes">
+                        <Eyebrow size="sm">Your notes</Eyebrow>
+                        <p>{req.notes}</p>
                       </div>
                     )}
                   </div>
@@ -2864,10 +3131,20 @@ function ReviewRating({ request, donation, donor, onBack, onSubmit }: any) {
 
   return (
     <div>
-      <div className="breadcrumb"><button onClick={onBack} className="breadcrumb-link">My Requests</button><span>/</span><span className="breadcrumb-current">Leave Review</span></div>
+      <button onClick={onBack} className="cc-back" aria-label="Back to my requests">
+        <span aria-hidden="true">←</span>
+        <span>Back to my requests</span>
+      </button>
       <div className="max-w-2xl mx-auto">
+        <header className="cc-page-header" style={{ textAlign: 'center', maxWidth: 'unset' }}>
+          <div className="cc-page-meta" style={{ justifyContent: 'center' }}>
+            <span>A community review</span>
+          </div>
+          <h1 className="cc-page-title">How was the <em className="cc-italic">handoff?</em></h1>
+          <p className="cc-page-lede">Your honest review helps the next neighbor know what to expect.</p>
+        </header>
         <div className="card">
-          <h1 className="review-title mb-6">Leave a Review</h1>
+          <h2 className="review-title mb-6" style={{ fontFamily: 'var(--font-display)' }}>{donation.title}</h2>
           <div className="review-donation-info">
             <div className="detail-label mb-1">Donation</div>
             <div className="review-donation-title">{donation.title}</div>
@@ -2967,11 +3244,15 @@ function Profile({ user, donations = [], requests = [], reviews = [], onBack, on
 
   return (
     <div className="profile-page">
-      <div className="dashboard-hero mb-6">
-        <div className="eyebrow mb-2">Your account</div>
-        <h1 className="page-title">Profile & preferences</h1>
-        <p className="page-subtitle">Manage how the community sees and reaches you.</p>
-      </div>
+      <header className="cc-page-header">
+        <div className="cc-page-meta">
+          <span className="cc-page-meta-num">№ 04</span>
+          <span className="cc-page-meta-dot" />
+          <span>{trustLabel}</span>
+        </div>
+        <h1 className="cc-page-title">{displayName.split(' ')[0]}'s <em className="cc-italic">kitchen</em>.</h1>
+        <p className="cc-page-lede">Manage how neighbors see and reach you — and follow the kitchen-table impact you've made together.</p>
+      </header>
 
       <div className="profile-layout">
         <motion.div
@@ -3045,19 +3326,14 @@ function Profile({ user, donations = [], requests = [], reviews = [], onBack, on
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.34, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="profile-trust-card">
-            <div className="profile-avatar">{profileInitials(user.displayName)}</div>
-            <div className="eyebrow mb-1">Community reputation</div>
-            <h2 className="profile-trust-name">{user.displayName}</h2>
-            <div className="profile-trust-email">{user.email}</div>
-            <div className="profile-rating-row">
-              {[...Array(5)].map((_, i) => <span key={i} className={i < Math.round(averageRating) ? 'star-filled' : 'star-empty'}>*</span>)}
-              <span className="rating-value">{averageRating ? averageRating.toFixed(1) : 'New'}</span>
-              <span className="rating-count">({reviewsReceived} reviews)</span>
-            </div>
-            <div className="profile-trust-badge">{trustLabel}</div>
-            <p className="profile-trust-copy">Built from completed pickups and neighbor reviews.</p>
-          </div>
+          <TrustPortrait
+            displayName={user.displayName}
+            email={user.email}
+            rating={averageRating}
+            reviewsReceived={reviewsReceived}
+            completedPickups={completedPickups}
+            trustLabel={trustLabel}
+          />
 
           <div className="profile-impact-card">
             <div className="form-section-header">

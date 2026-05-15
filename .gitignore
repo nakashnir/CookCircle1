@@ -47,3 +47,12 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local env files — never commit secrets. .env.example IS tracked (it's docs).
+.env
+.env.*
+!.env.example
+
+# Vite frontend production bundle — Render rebuilds on every deploy.
+# Kept out of git to avoid commit bloat and stale assets.
+artifacts/cookcircle/_static/
