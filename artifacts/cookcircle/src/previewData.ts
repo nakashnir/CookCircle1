@@ -14,7 +14,7 @@ export const PREVIEW_USERS: User[] = [
   {
     id: 1,
     displayName: 'Yael Cohen',
-    email: 'yael@example.co.il',
+    email: 'preview.donor@cookcircle.demo',
     phone: '050-111-2222',
     dietaryPreferences: ['vegan'],
     discreetPickup: false,
@@ -24,7 +24,7 @@ export const PREVIEW_USERS: User[] = [
   {
     id: 2,
     displayName: 'David Levi',
-    email: 'david@example.co.il',
+    email: 'preview.viewer@cookcircle.demo',
     phone: '052-333-4444',
     dietaryPreferences: [],
     discreetPickup: true,

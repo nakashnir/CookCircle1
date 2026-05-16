@@ -70,12 +70,6 @@ export function AuthScreen({ onLogin }: { onLogin: (user: User) => void }) {
     }
   };
 
-  const presetEmails: Array<[string, string]> = [
-    ['Yael — donor with active request', 'yael@example.co.il'],
-    ['Maya — donor with two listings', 'maya@example.co.il'],
-    ['David — community member', 'david@example.co.il'],
-  ];
-
   return (
     <div className="cc-auth-shell">
       {/* ── Ambient mesh background (single decorative layer for both columns) ── */}
@@ -332,28 +326,6 @@ export function AuthScreen({ onLogin }: { onLogin: (user: User) => void }) {
             </form>
           )}
 
-          {/* Demo creds */}
-          <div className="cc-auth-demo">
-            <Eyebrow size="sm">Quick demo access</Eyebrow>
-            <ul className="cc-auth-demo-list">
-              {presetEmails.map(([label, addr]) => (
-                <li key={addr}>
-                  <span className="cc-auth-demo-label">{label}</span>
-                  <button
-                    type="button"
-                    className="cc-auth-demo-btn"
-                    onClick={() => { setEmail(addr); setTab('login'); }}
-                  >
-                    {addr}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <p className="cc-auth-demo-note">
-              Password for all demo accounts:{' '}
-              <code className="cc-auth-demo-code">CookCircle123!</code>
-            </p>
-          </div>
         </motion.div>
       </section>
     </div>
