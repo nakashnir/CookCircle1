@@ -331,12 +331,16 @@ function StreetAutocompleteInput({ id, value, onChange, onPlaceSelect, className
 function LocationConfirmStep({
   street, houseNumber, city, pickupNotes,
   geoPreview, onBack, onConfirm, confirmLabel,
+  submitting = false,
 }: {
   street: string; houseNumber: string; city: string; pickupNotes: string;
   geoPreview: GeocodePreview;
   onBack: () => void;
   onConfirm: () => void;
   confirmLabel: string;
+  /** When true, disable the confirm button + show a pending label.
+   *  Prevents duplicate submissions if the parent's async submit is still in flight. */
+  submitting?: boolean;
 }) {
   // Sprint 3: five distinct geocode outcome states backed by real backend signals.
   // High-confidence: Google confirmed rooftop or interpolated street-level precision.
@@ -458,10 +462,19 @@ function LocationConfirmStep({
         <div className="flex gap-3 pt-2">
           <button onClick={onBack} className="btn-secondary flex-1">← Edit address</button>
           {isNotFound ? (
-            <button onClick={onBack} className="btn-primary flex-1">Fix address</button>
+            <button onClick={onBack} className="btn-primary flex-1" disabled={submitting}>Fix address</button>
           ) : (
-            <button onClick={onConfirm} className="btn-primary flex-1">
-              {isHighConfidence ? confirmLabel : `${confirmLabel} anyway`}
+            <button
+              onClick={onConfirm}
+              className="btn-primary flex-1"
+              disabled={submitting}
+              aria-busy={submitting}
+            >
+              {submitting
+                ? `${confirmLabel.replace(/^Confirm & /, '')}…`
+                : isHighConfidence
+                  ? confirmLabel
+                  : `${confirmLabel} anyway`}
             </button>
           )}
         </div>
@@ -2056,10 +2069,23 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
     }
   };
 
-  const handleConfirm = () => {
-    const payload: any = { title, description, foodType, quantity, expiryDate, dietaryTags, city, street, houseNumber, pickupNotes, allowDiscreet };
-    if (imageData) payload.image = { data: imageData };
-    onSubmit(payload);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const handleConfirm = async () => {
+    // Hard guard against double-clicks while the previous submit is in flight.
+    // Without this, slow network conditions in production let users click
+    // "Confirm & Publish" multiple times and create duplicate donations.
+    if (isPublishing) return;
+    setIsPublishing(true);
+    try {
+      const payload: any = { title, description, foodType, quantity, expiryDate, dietaryTags, city, street, houseNumber, pickupNotes, allowDiscreet };
+      if (imageData) payload.image = { data: imageData };
+      await onSubmit(payload);
+    } finally {
+      // Re-enable on error so the user can retry. On success the parent
+      // navigates to my-donations and this component unmounts; React 18
+      // silently no-ops setState on unmounted components.
+      setIsPublishing(false);
+    }
   };
 
   const handlePlaceSelect = useCallback((data: PlaceSelectData) => {
@@ -2093,6 +2119,7 @@ function CreateDonation({ onBack, onSubmit }: { onBack: () => void; onSubmit: an
           onBack={() => setStep('form')}
           onConfirm={handleConfirm}
           confirmLabel="Confirm & Publish"
+          submitting={isPublishing}
         />
       </div>
     );
@@ -2723,10 +2750,19 @@ function EditDonation({ donation, onBack, onSubmit }: { donation: Donation; onBa
     if (data.city) setCity(data.city);
   }, []);
 
-  const doSave = () => {
-    const payload: any = { title, description, foodType, quantity, expiryDate, dietaryTags, city, street, houseNumber, pickupNotes, allowDiscreet };
-    if (newImageData) payload.image = { data: newImageData };
-    onSubmit(payload);
+  const [isSaving, setIsSaving] = useState(false);
+  const doSave = async () => {
+    // Hard guard — same reasoning as CreateDonation.handleConfirm: slow
+    // production requests let users click "Save Changes" multiple times.
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const payload: any = { title, description, foodType, quantity, expiryDate, dietaryTags, city, street, houseNumber, pickupNotes, allowDiscreet };
+      if (newImageData) payload.image = { data: newImageData };
+      await onSubmit(payload);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCheckLocation = async () => {
@@ -2792,6 +2828,7 @@ function EditDonation({ donation, onBack, onSubmit }: { donation: Donation; onBa
           onBack={() => setStep('form')}
           onConfirm={doSave}
           confirmLabel="Confirm & Save"
+          submitting={isSaving}
         />
       </div>
     );
@@ -2944,8 +2981,19 @@ function EditDonation({ donation, onBack, onSubmit }: { donation: Donation; onBa
           )}
           <div className="flex gap-4">
             <button onClick={onBack} className="btn-secondary flex-1">Cancel</button>
-            <button onClick={handleSubmit} disabled={geoLoading} className="btn-primary flex-1">
-              {geoLoading ? 'Checking location…' : addressChanged ? 'Check Location →' : 'Save Changes'}
+            <button
+              onClick={handleSubmit}
+              disabled={geoLoading || isSaving}
+              aria-busy={geoLoading || isSaving}
+              className="btn-primary flex-1"
+            >
+              {geoLoading
+                ? 'Checking location…'
+                : isSaving
+                  ? 'Saving…'
+                  : addressChanged
+                    ? 'Check Location →'
+                    : 'Save Changes'}
             </button>
           </div>
           {addressChanged && (

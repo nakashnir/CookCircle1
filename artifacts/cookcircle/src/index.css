@@ -6304,3 +6304,45 @@
     .cc-feed-hero-rail-card--front { transform: rotate(1.5deg) !important; }
   }
 }
+
+@layer components {
+  /* ============================================================================
+   * Production hotfix 1 — Sticky header always-readable background
+   * ----------------------------------------------------------------------------
+   * Previously cc-header was `background: transparent` until `scrollY > 8`.
+   * Result: at the top of every page the nav has zero background and bleeds
+   * into the hero gradient or the first cards underneath. In production that
+   * reads as broken / overlapping.
+   *
+   * Fix: give the header a stable translucent paper bg + light backdrop blur
+   * at ALL scroll positions, and tighten the is-scrolled state so the visual
+   * change still registers when the user scrolls. Fallback for browsers
+   * without backdrop-filter uses a near-solid bg so readability survives.
+   * ========================================================================== */
+  .cc-header {
+    background: rgba(253, 251, 246, 0.86);
+    backdrop-filter: saturate(160%) blur(10px);
+    -webkit-backdrop-filter: saturate(160%) blur(10px);
+    border-bottom: 1px solid var(--paper-line);
+  }
+  .cc-header.is-scrolled {
+    background: rgba(253, 251, 246, 0.94);
+    backdrop-filter: saturate(180%) blur(18px);
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+    border-bottom-color: rgba(28, 53, 32, 0.10);
+    box-shadow:
+      0 1px 0 rgba(28, 53, 32, 0.04),
+      0 8px 24px -16px rgba(28, 53, 32, 0.18);
+  }
+  /* Fallback for browsers without backdrop-filter (Firefox <103 in some
+     configs, older Safari, Brave with shields). Make the surface solid
+     enough to remain readable without the blur trick. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .cc-header {
+      background: rgba(253, 251, 246, 0.98);
+    }
+    .cc-header.is-scrolled {
+      background: rgb(253, 251, 246);
+    }
+  }
+}
