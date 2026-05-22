@@ -19,11 +19,13 @@ export function Header({
   onNavigate,
   currentUser,
   onLogout,
+  loggingOut = false,
 }: {
   currentScreen: string;
   onNavigate: (screen: any) => void;
   currentUser: User;
   onLogout: () => void;
+  loggingOut?: boolean;
 }) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -104,8 +106,10 @@ export function Header({
             onClick={onLogout}
             className="cc-signout"
             aria-label="Sign out"
+            disabled={loggingOut}
+            aria-busy={loggingOut}
           >
-            Sign out
+            {loggingOut ? 'Signing out…' : 'Sign out'}
           </button>
           <motion.button
             type="button"

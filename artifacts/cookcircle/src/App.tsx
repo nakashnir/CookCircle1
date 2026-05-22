@@ -556,7 +556,26 @@ export default function App() {
   const [authState, setAuthState] = useState<'loading' | 'unauthed' | 'authed'>('loading');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
-  const [busy, setBusy] = useState(false);
+  // Per-action async lock — replaces the legacy single `busy` boolean.
+  //
+  // Why: previously every mutation shared one flag, used only by the corner
+  // "pip" indicator. Action buttons themselves never disabled, so on slow
+  // networks users would click "Approve" / "Mark picked up" / "Delete"
+  // repeatedly while the request was in flight, generating duplicate calls
+  // and confusing duplicate-error toasts when the server rejected the
+  // second attempt against the now-mutated state.
+  //
+  // Now: every mutation runs through `runMutation(label, op, ok?, actionKey?)`
+  // which records `actionKey` (e.g. `"approve-request:42"`). Buttons read
+  // `isActionPending(key)` to disable themselves immediately and surface a
+  // pending label. Unrelated rows stay interactive — only the action that
+  // was clicked locks. Keys without granularity (login, logout, save-profile)
+  // block the whole page-level submit.
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const isActionPending = useCallback(
+    (key: string) => pendingAction === key,
+    [pendingAction],
+  );
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
 
   // Feed filter / sort / proximity state — owned at App level so it survives
@@ -738,6 +757,8 @@ export default function App() {
       showToast('success', '[Preview] Sign-out disabled — refresh to reset');
       return;
     }
+    if (pendingAction === 'logout') return;
+    setPendingAction('logout');
     try { await api.logout(); } catch { /* ignore */ }
     setCurrentUser(null);
     setAuthState('unauthed');
@@ -746,6 +767,7 @@ export default function App() {
     setRequests([]);
     setReviews([]);
     setCurrentScreen('feed');
+    setPendingAction(null);
   };
 
   const viewDonationDetails = (donationId: number) => {
@@ -753,12 +775,22 @@ export default function App() {
     setCurrentScreen('details');
   };
 
-  const runMutation = async (label: string, op: () => Promise<unknown>, successMsg?: string) => {
+  const runMutation = async (
+    label: string,
+    op: () => Promise<unknown>,
+    successMsg?: string,
+    actionKey?: string,
+  ) => {
     if (IS_UI_PREVIEW) {
       showToast('success', `[Preview] ${successMsg ?? label} — not persisted`);
       return true;
     }
-    setBusy(true);
+    // Reject re-entry while the same action is already running. This is the
+    // duplicate-click guard — even if a caller forgets to read pendingAction
+    // on the button, the second click here is a no-op rather than a second
+    // network request.
+    if (actionKey && pendingAction === actionKey) return false;
+    if (actionKey) setPendingAction(actionKey);
     try {
       await op();
       await refreshAll();
@@ -768,7 +800,7 @@ export default function App() {
       showToast('error', `${label}: ${err?.message ?? 'failed'}`);
       return false;
     } finally {
-      setBusy(false);
+      if (actionKey) setPendingAction(null);
     }
   };
 
@@ -776,6 +808,7 @@ export default function App() {
     const ok = await runMutation('Send request', () =>
       api.createPickupRequest(donationId, pickupTime, notes, discreetPickup),
       'Pickup request sent',
+      `create-request:${donationId}`,
     );
     if (ok) setCurrentScreen('requests');
   };
@@ -784,6 +817,7 @@ export default function App() {
     const ok = await runMutation('Create donation', () =>
       api.createDonation(donation),
       'Donation published',
+      'create-donation',
     );
     if (ok) setCurrentScreen('my-donations');
   };
@@ -792,6 +826,7 @@ export default function App() {
     const ok = await runMutation('Update donation', () =>
       api.updateDonation(donationId, patch),
       'Donation updated',
+      `update-donation:${donationId}`,
     );
     if (ok) setCurrentScreen('my-donations');
   };
@@ -803,10 +838,22 @@ export default function App() {
       cancelled: 'Cancel request',
       completed: 'Complete pickup',
     };
+    // Approve and decline are both "donor decides on this request" — they're
+    // mutually exclusive on the same row, so we key them per-request, not
+    // per-status. Cancel/complete from the recipient side reuse the same
+    // key space; only one of them is ever offered on a given row so they
+    // cannot collide.
+    const actionKey =
+      newStatus === 'approved'
+        ? `approve-request:${requestId}`
+        : newStatus === 'completed'
+          ? `complete-request:${requestId}`
+          : `change-request:${requestId}`;
     await runMutation(
       labels[newStatus],
       () => api.setRequestStatus(requestId, newStatus),
       newStatus === 'approved' ? 'Request approved' : newStatus === 'cancelled' ? 'Request cancelled' : newStatus === 'completed' ? 'Pickup marked complete' : undefined,
+      actionKey,
     );
   };
 
@@ -820,11 +867,25 @@ export default function App() {
     setCurrentScreen('edit');
   };
 
-  const saveProfile = async (patch: Partial<Pick<User, 'displayName' | 'email' | 'phone' | 'dietaryPreferences' | 'discreetPickup'>>) => {
+  const saveProfile = async (
+    patch: Partial<
+      Pick<
+        User,
+        | 'displayName'
+        | 'email'
+        | 'phone'
+        | 'dietaryPreferences'
+        | 'discreetPickup'
+        | 'aboutMe'
+        | 'generalLocation'
+      >
+    > & { profileImage?: { data: string } | null },
+  ) => {
     if (!currentUser) return;
     const ok = await runMutation('Save profile', () =>
       api.updateUser(currentUser.id, patch),
       'Profile saved',
+      'save-profile',
     );
     if (ok) setCurrentScreen('feed');
   };
@@ -833,6 +894,7 @@ export default function App() {
     const ok = await runMutation('Submit review', () =>
       api.submitReview(requestId, rating, comment),
       'Review submitted',
+      `submit-review:${requestId}`,
     );
     if (ok) setCurrentScreen('requests');
   };
@@ -841,6 +903,7 @@ export default function App() {
     await runMutation('Delete donation', () =>
       api.deleteDonation(donationId),
       'Donation deleted',
+      `delete-donation:${donationId}`,
     );
   };
 
@@ -853,6 +916,7 @@ export default function App() {
     await runMutation('Update status', () =>
       api.updateDonation(donationId, { status: next }),
       labels[next],
+      `status-donation:${donationId}:${next}`,
     );
   };
 
@@ -881,6 +945,7 @@ export default function App() {
         onNavigate={setCurrentScreen}
         currentUser={currentUser}
         onLogout={handleLogout}
+        loggingOut={pendingAction === 'logout'}
       />
       <main id="cc-main" className="max-w-wide mx-auto px-4 md:px-8 py-6 md:py-8">
         {loadError && (
@@ -906,7 +971,7 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
-        {busy && (
+        {pendingAction && (
           <div className="cc-busy-pip" aria-live="polite">
             <span className="cc-busy-pip-dot" aria-hidden="true" />
             Working…
@@ -955,6 +1020,7 @@ export default function App() {
                   requests={requests}
                   reviews={reviews}
                   locationFallback={healthStatus ? healthStatus.location === 'local' : true}
+                  pendingAction={pendingAction}
                 />
               );
             })()}
@@ -982,6 +1048,7 @@ export default function App() {
                 onApprove={(rid: number) => updateRequestStatus(rid, 'approved')}
                 onDecline={(rid: number) => updateRequestStatus(rid, 'cancelled')}
                 onSetStatus={setDonationStatus}
+                pendingAction={pendingAction}
               />
             )}
             {currentScreen === 'requests' && (
@@ -993,6 +1060,7 @@ export default function App() {
                 onUpdateStatus={updateRequestStatus}
                 onLeaveReview={openReviewScreen}
                 reviews={reviews}
+                pendingAction={pendingAction}
               />
             )}
             {currentScreen === 'review' && selectedRequestId && (() => {
@@ -1007,6 +1075,7 @@ export default function App() {
                   donor={donor}
                   onBack={() => setCurrentScreen('requests')}
                   onSubmit={(rating: number, comment: string) => submitReview(selectedRequestId!, rating, comment)}
+                  pendingAction={pendingAction}
                 />
               );
             })()}
@@ -1018,6 +1087,7 @@ export default function App() {
                 reviews={reviews}
                 onBack={() => setCurrentScreen('feed')}
                 onSave={saveProfile}
+                pendingAction={pendingAction}
               />
             )}
           </motion.div>
@@ -1352,9 +1422,11 @@ function DonationFeed({
   );
 }
 
-function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUserId, requests, reviews, locationFallback }: {
+function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUserId, requests, reviews, locationFallback, pendingAction }: {
   donation: Donation; donor: User; onBack: () => void; onSubmitRequest: any; currentUserId: number; requests: PickupRequest[]; reviews: Review[]; locationFallback?: boolean;
+  pendingAction?: string | null;
 }) {
+  const requestPending = pendingAction === `create-request:${donation.id}`;
   const [pickupTime, setPickupTime] = useState('');
   const [notes, setNotes] = useState('');
   const [discreetPickup, setDiscreetPickup] = useState(false);
@@ -1790,11 +1862,13 @@ function DonationDetails({ donation, donor, onBack, onSubmitRequest, currentUser
                 <motion.button
                   onClick={handleSubmit}
                   className="cc-cta-primary cc-cta-primary--lg cc-cta-primary--full"
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.98 }}
+                  disabled={requestPending}
+                  aria-busy={requestPending}
+                  whileHover={requestPending ? undefined : { y: -1 }}
+                  whileTap={requestPending ? undefined : { scale: 0.98 }}
                 >
-                  <span>Send pickup request</span>
-                  <Icon.ArrowRight size={16} />
+                  <span>{requestPending ? 'Sending request…' : 'Send pickup request'}</span>
+                  {!requestPending && <Icon.ArrowRight size={16} />}
                 </motion.button>
                 <p className="cc-side-card-foot cc-side-card-foot--center">
                   Exact address revealed after the donor approves.
@@ -2455,7 +2529,25 @@ function donationNextAction(donation: Donation, pendingCount: number, completedC
   return 'Review listing status.';
 }
 
-function MyDonations({ donations, requests, reviews = [], users, onViewDetails, onDelete, onEdit, onApprove, onDecline, onSetStatus }: any) {
+function MyDonations({ donations, requests, reviews = [], users, onViewDetails, onDelete, onEdit, onApprove, onDecline, onSetStatus, pendingAction }: any) {
+  const isPending = (key: string) => pendingAction === key;
+  // Approve / Decline live on the same row; locking either should freeze both
+  // so the donor cannot fire a conflicting second action while the first is
+  // in flight (server would reject the second anyway, but the user-facing
+  // duplicate-error toast is the symptom we're solving).
+  const requestRowLocked = (rid: number) =>
+    pendingAction === `approve-request:${rid}` ||
+    pendingAction === `change-request:${rid}`;
+  // Per-donation lock: any status mutation (cancel/expire/reopen) and the
+  // delete action share a row; lock the whole row's destructive controls
+  // when one is running so the user doesn't fire "Cancel" then "Delete"
+  // in quick succession on the same listing.
+  const donationRowLocked = (did: number) =>
+    pendingAction === `delete-donation:${did}` ||
+    pendingAction === `status-donation:${did}:cancelled` ||
+    pendingAction === `status-donation:${did}:expired` ||
+    pendingAction === `status-donation:${did}:available` ||
+    pendingAction === `update-donation:${did}`;
   const formatDateTime = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   const getDonationRequests = (did: number) => requests.filter((r: any) => r.donationId === did);
   const donationIds = new Set(donations.map((d: any) => d.id));
@@ -2631,12 +2723,31 @@ function MyDonations({ donations, requests, reviews = [], users, onViewDetails, 
                                         <Icon.Lock size={11} /> Discreet pickup requested
                                       </span>
                                     )}
-                                    {r.status === 'pending' && (
-                                      <div className="cc-incoming-actions">
-                                        <button onClick={() => onApprove(r.id)} className="cc-action-btn cc-action-btn--primary">Approve</button>
-                                        <button onClick={() => { if (confirm('Decline this request?')) onDecline(r.id); }} className="cc-action-btn cc-action-btn--ghost">Decline</button>
-                                      </div>
-                                    )}
+                                    {r.status === 'pending' && (() => {
+                                      const approving = isPending(`approve-request:${r.id}`);
+                                      const declining = isPending(`change-request:${r.id}`);
+                                      const rowLocked = requestRowLocked(r.id);
+                                      return (
+                                        <div className="cc-incoming-actions">
+                                          <button
+                                            onClick={() => onApprove(r.id)}
+                                            className="cc-action-btn cc-action-btn--primary"
+                                            disabled={rowLocked}
+                                            aria-busy={approving}
+                                          >
+                                            {approving ? 'Approving…' : 'Approve'}
+                                          </button>
+                                          <button
+                                            onClick={() => { if (confirm('Decline this request?')) onDecline(r.id); }}
+                                            className="cc-action-btn cc-action-btn--ghost"
+                                            disabled={rowLocked}
+                                            aria-busy={declining}
+                                          >
+                                            {declining ? 'Declining…' : 'Decline'}
+                                          </button>
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
                               </div>
@@ -2647,55 +2758,98 @@ function MyDonations({ donations, requests, reviews = [], users, onViewDetails, 
                     )}
                   </div>
                   <div className="md:col-span-3 row-actions">
-                    {isClosed ? (
-                      <>
-                        <div className="action-stack-label">Listing closed</div>
-                        <button onClick={() => onSetStatus(d.id, 'available')} className="btn-primary">Reopen listing</button>
-                        <button onClick={() => onEdit(d.id)} className="btn-secondary">Edit details</button>
-                        <div className="action-stack-divider" />
-                        <button
-                          onClick={() => { if (window.confirm('Permanently delete this listing and all its history? This cannot be undone.')) onDelete(d.id); }}
-                          className="btn-danger w-full"
-                        >
-                          Delete permanently
-                        </button>
-                      </>
-                    ) : d.status === 'picked_up' ? (
-                      <>
-                        <div className="status-completed-badge">✓ Picked up</div>
-                        <button onClick={() => onViewDetails(d.id)} className="btn-secondary">View details</button>
-                      </>
-                    ) : isReserved ? (
-                      <>
-                        <div className="action-stack-label">Reserved</div>
-                        <button onClick={() => onViewDetails(d.id)} className="btn-primary">View details</button>
-                        <button onClick={() => onEdit(d.id)} className="btn-secondary">Edit details</button>
-                        <div className="action-stack-divider" />
-                        <button
-                          onClick={() => { if (window.confirm('Cancel this reservation? The recipient\'s pickup request will also be cancelled.')) onSetStatus(d.id, 'cancelled'); }}
-                          className="btn-ghost"
-                        >
-                          Cancel & release
-                        </button>
-                        <div className="text-[11px] text-zinc-400 text-center px-1">Cannot delete while reserved</div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="action-stack-label">Available</div>
-                        <button onClick={() => onViewDetails(d.id)} className="btn-primary">View details</button>
-                        <button onClick={() => onEdit(d.id)} className="btn-secondary">Edit details</button>
-                        <div className="action-stack-divider" />
-                        <button onClick={() => { if (window.confirm('Cancel this listing? It will be marked as unavailable.')) onSetStatus(d.id, 'cancelled'); }} className="btn-ghost">Cancel listing</button>
-                        <button onClick={() => { if (window.confirm('Mark this donation as expired?')) onSetStatus(d.id, 'expired'); }} className="btn-ghost">Mark expired</button>
-                        <div className="action-stack-divider" />
-                        <button
-                          onClick={() => { if (window.confirm('Permanently delete this listing? This cannot be undone.')) onDelete(d.id); }}
-                          className="btn-danger w-full text-sm"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
+                    {(() => {
+                      const rowLocked = donationRowLocked(d.id);
+                      const reopening = isPending(`status-donation:${d.id}:available`);
+                      const cancelling = isPending(`status-donation:${d.id}:cancelled`);
+                      const expiring = isPending(`status-donation:${d.id}:expired`);
+                      const deleting = isPending(`delete-donation:${d.id}`);
+                      if (isClosed) {
+                        return (
+                          <>
+                            <div className="action-stack-label">Listing closed</div>
+                            <button
+                              onClick={() => onSetStatus(d.id, 'available')}
+                              className="btn-primary"
+                              disabled={rowLocked}
+                              aria-busy={reopening}
+                            >
+                              {reopening ? 'Reopening…' : 'Reopen listing'}
+                            </button>
+                            <button onClick={() => onEdit(d.id)} className="btn-secondary" disabled={rowLocked}>Edit details</button>
+                            <div className="action-stack-divider" />
+                            <button
+                              onClick={() => { if (window.confirm('Permanently delete this listing and all its history? This cannot be undone.')) onDelete(d.id); }}
+                              className="btn-danger w-full"
+                              disabled={rowLocked}
+                              aria-busy={deleting}
+                            >
+                              {deleting ? 'Deleting…' : 'Delete permanently'}
+                            </button>
+                          </>
+                        );
+                      }
+                      if (d.status === 'picked_up') {
+                        return (
+                          <>
+                            <div className="status-completed-badge">✓ Picked up</div>
+                            <button onClick={() => onViewDetails(d.id)} className="btn-secondary">View details</button>
+                          </>
+                        );
+                      }
+                      if (isReserved) {
+                        return (
+                          <>
+                            <div className="action-stack-label">Reserved</div>
+                            <button onClick={() => onViewDetails(d.id)} className="btn-primary">View details</button>
+                            <button onClick={() => onEdit(d.id)} className="btn-secondary" disabled={rowLocked}>Edit details</button>
+                            <div className="action-stack-divider" />
+                            <button
+                              onClick={() => { if (window.confirm('Cancel this reservation? The recipient\'s pickup request will also be cancelled.')) onSetStatus(d.id, 'cancelled'); }}
+                              className="btn-ghost"
+                              disabled={rowLocked}
+                              aria-busy={cancelling}
+                            >
+                              {cancelling ? 'Cancelling…' : 'Cancel & release'}
+                            </button>
+                            <div className="text-[11px] text-zinc-400 text-center px-1">Cannot delete while reserved</div>
+                          </>
+                        );
+                      }
+                      return (
+                        <>
+                          <div className="action-stack-label">Available</div>
+                          <button onClick={() => onViewDetails(d.id)} className="btn-primary">View details</button>
+                          <button onClick={() => onEdit(d.id)} className="btn-secondary" disabled={rowLocked}>Edit details</button>
+                          <div className="action-stack-divider" />
+                          <button
+                            onClick={() => { if (window.confirm('Cancel this listing? It will be marked as unavailable.')) onSetStatus(d.id, 'cancelled'); }}
+                            className="btn-ghost"
+                            disabled={rowLocked}
+                            aria-busy={cancelling}
+                          >
+                            {cancelling ? 'Cancelling…' : 'Cancel listing'}
+                          </button>
+                          <button
+                            onClick={() => { if (window.confirm('Mark this donation as expired?')) onSetStatus(d.id, 'expired'); }}
+                            className="btn-ghost"
+                            disabled={rowLocked}
+                            aria-busy={expiring}
+                          >
+                            {expiring ? 'Marking expired…' : 'Mark expired'}
+                          </button>
+                          <div className="action-stack-divider" />
+                          <button
+                            onClick={() => { if (window.confirm('Permanently delete this listing? This cannot be undone.')) onDelete(d.id); }}
+                            className="btn-danger w-full text-sm"
+                            disabled={rowLocked}
+                            aria-busy={deleting}
+                          >
+                            {deleting ? 'Deleting…' : 'Delete'}
+                          </button>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </motion.div>
@@ -3007,7 +3161,16 @@ function EditDonation({ donation, onBack, onSubmit }: { donation: Donation; onBa
   );
 }
 
-function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus, onLeaveReview, reviews }: any) {
+function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus, onLeaveReview, reviews, pendingAction }: any) {
+  // A request row exposes at most two mutations at once (e.g. Mark picked up
+  // and Cancel on an approved row). Lock both buttons while either is in
+  // flight so the recipient can't fire one then the other before the first
+  // resolves.
+  const requestRowLocked = (rid: number) =>
+    pendingAction === `complete-request:${rid}` ||
+    pendingAction === `change-request:${rid}` ||
+    pendingAction === `approve-request:${rid}`;
+  const isPending = (key: string) => pendingAction === key;
   const [activeTab, setActiveTab] = useState<'all' | RequestStatus>('all');
   const formatDateTime = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   const filteredRequests = activeTab === 'all' ? requests : requests.filter((r: any) => r.status === activeTab);
@@ -3128,23 +3291,53 @@ function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus
                     )}
                   </div>
                   <div className="md:col-span-3 row-actions">
-                    {req.status === 'pending' && (
-                      <>
-                        <div className="status-pending-badge">⏳ Waiting for approval</div>
-                        <button onClick={() => onViewDonation(donation.id)} className="btn-secondary">View donation</button>
-                        <div className="action-stack-divider" />
-                        <button onClick={() => confirm('Cancel this request?') && onUpdateStatus(req.id, 'cancelled')} className="btn-ghost">Cancel request</button>
-                      </>
-                    )}
-                    {req.status === 'approved' && (
-                      <>
-                        <div className="action-stack-label">Next step</div>
-                        <button onClick={() => confirm('Mark this pickup as completed?') && onUpdateStatus(req.id, 'completed')} className="btn-primary">Mark picked up</button>
-                        <button onClick={() => onViewDonation(donation.id)} className="btn-secondary">View donation</button>
-                        <div className="action-stack-divider" />
-                        <button onClick={() => confirm('Cancel this request?') && onUpdateStatus(req.id, 'cancelled')} className="btn-ghost">Cancel</button>
-                      </>
-                    )}
+                    {req.status === 'pending' && (() => {
+                      const rowLocked = requestRowLocked(req.id);
+                      const cancelling = isPending(`change-request:${req.id}`);
+                      return (
+                        <>
+                          <div className="status-pending-badge">⏳ Waiting for approval</div>
+                          <button onClick={() => onViewDonation(donation.id)} className="btn-secondary">View donation</button>
+                          <div className="action-stack-divider" />
+                          <button
+                            onClick={() => confirm('Cancel this request?') && onUpdateStatus(req.id, 'cancelled')}
+                            className="btn-ghost"
+                            disabled={rowLocked}
+                            aria-busy={cancelling}
+                          >
+                            {cancelling ? 'Cancelling…' : 'Cancel request'}
+                          </button>
+                        </>
+                      );
+                    })()}
+                    {req.status === 'approved' && (() => {
+                      const rowLocked = requestRowLocked(req.id);
+                      const completing = isPending(`complete-request:${req.id}`);
+                      const cancelling = isPending(`change-request:${req.id}`);
+                      return (
+                        <>
+                          <div className="action-stack-label">Next step</div>
+                          <button
+                            onClick={() => confirm('Mark this pickup as completed?') && onUpdateStatus(req.id, 'completed')}
+                            className="btn-primary"
+                            disabled={rowLocked}
+                            aria-busy={completing}
+                          >
+                            {completing ? 'Completing…' : 'Mark picked up'}
+                          </button>
+                          <button onClick={() => onViewDonation(donation.id)} className="btn-secondary">View donation</button>
+                          <div className="action-stack-divider" />
+                          <button
+                            onClick={() => confirm('Cancel this request?') && onUpdateStatus(req.id, 'cancelled')}
+                            className="btn-ghost"
+                            disabled={rowLocked}
+                            aria-busy={cancelling}
+                          >
+                            {cancelling ? 'Cancelling…' : 'Cancel'}
+                          </button>
+                        </>
+                      );
+                    })()}
                     {req.status === 'completed' && (
                       <>
                         {!reviewed ? (
@@ -3172,10 +3365,11 @@ function MyRequests({ requests, donations, users, onViewDonation, onUpdateStatus
   );
 }
 
-function ReviewRating({ request, donation, donor, onBack, onSubmit }: any) {
+function ReviewRating({ request, donation, donor, onBack, onSubmit, pendingAction }: any) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState('');
+  const submitting = pendingAction === `submit-review:${request.id}`;
 
   return (
     <div>
@@ -3221,8 +3415,15 @@ function ReviewRating({ request, donation, donor, onBack, onSubmit }: any) {
             </div>
             <div><label className="form-label mb-2">Comment</label><textarea rows={6} placeholder="Share your experience with this donation and donor..." value={comment} onChange={(e) => setComment(e.target.value)} className="input-field resize-none" /></div>
             <div className="flex gap-4">
-              <button onClick={onBack} className="btn-secondary flex-1">Cancel</button>
-              <button onClick={() => { if (rating === 0) { alert('Please select a rating'); return; } onSubmit(rating, comment); }} className="btn-primary flex-1">Submit Review</button>
+              <button onClick={onBack} className="btn-secondary flex-1" disabled={submitting}>Cancel</button>
+              <button
+                onClick={() => { if (rating === 0) { alert('Please select a rating'); return; } onSubmit(rating, comment); }}
+                className="btn-primary flex-1"
+                disabled={submitting}
+                aria-busy={submitting}
+              >
+                {submitting ? 'Submitting review…' : 'Submit Review'}
+              </button>
             </div>
           </div>
         </div>
@@ -3252,19 +3453,47 @@ function estimateProfileFoodSavedKg(donations: Donation[]): number {
   }, 0);
 }
 
-function Profile({ user, donations = [], requests = [], reviews = [], onBack, onSave }: {
+function Profile({ user, donations = [], requests = [], reviews = [], onBack, onSave, pendingAction }: {
   user: User;
   donations?: Donation[];
   requests?: PickupRequest[];
   reviews?: Review[];
   onBack: () => void;
-  onSave: (patch: Partial<Pick<User, 'displayName' | 'email' | 'phone' | 'dietaryPreferences' | 'discreetPickup'>>) => void;
+  onSave: (
+    patch: Partial<
+      Pick<
+        User,
+        | 'displayName'
+        | 'email'
+        | 'phone'
+        | 'dietaryPreferences'
+        | 'discreetPickup'
+        | 'aboutMe'
+        | 'generalLocation'
+      >
+    > & { profileImage?: { data: string } | null },
+  ) => void;
+  pendingAction?: string | null;
 }) {
+  const saving = pendingAction === 'save-profile';
   const [displayName, setDisplayName] = useState(user.displayName);
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone);
   const [dietaryPreferences, setDietaryPreferences] = useState<DietaryTag[]>(user.dietaryPreferences);
   const [discreetPickup, setDiscreetPickup] = useState(user.discreetPickup);
+  // Profile Trust v1 — avatar / about / general location.
+  // avatarPending holds a freshly-selected data URL waiting to be uploaded
+  // on save; null means "no avatar change requested this session".
+  // avatarCleared = true means the user explicitly removed their existing
+  // avatar (initials fallback re-applies after save).
+  const [avatarPending, setAvatarPending] = useState<string | null>(null);
+  const [avatarCleared, setAvatarCleared] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [aboutMe, setAboutMe] = useState(user.aboutMe ?? '');
+  const [generalLocation, setGeneralLocation] = useState(user.generalLocation ?? '');
+  // Effective avatar URL for preview: a freshly-picked image wins; otherwise
+  // the existing server URL unless the user just cleared it.
+  const displayedAvatar = avatarPending ?? (avatarCleared ? null : user.profileImageUrl ?? null);
   const userDonations = donations.filter((donation) => donation.donorId === user.id);
   const userDonationIds = new Set(userDonations.map((donation) => donation.id));
   const completedPickups = requests.filter((request) =>
@@ -3309,6 +3538,136 @@ function Profile({ user, donations = [], requests = [], reviews = [], onBack, on
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
         >
+          {/* Profile Trust v1 — avatar, about, general location. Lives above
+              "Personal information" because the avatar is the first thing
+              neighbors associate with the account. The card reuses the
+              existing .profile-form-card surface so we don't introduce a
+              new CSS class for v1; inline styles keep the avatar circle and
+              upload row contained without a stylesheet edit. */}
+          <div className="profile-form-card">
+            <div className="form-section-header">
+              <div>
+                <h2 className="form-section-title">Profile photo &amp; bio</h2>
+                <p className="form-section-hint">A friendly face and a few words help neighbors trust you faster.</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div
+                aria-hidden={displayedAvatar ? undefined : true}
+                style={{
+                  width: 88,
+                  height: 88,
+                  borderRadius: '50%',
+                  background: displayedAvatar ? '#f4efe7' : 'var(--forest, #2f5042)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 28,
+                  letterSpacing: 1,
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  border: '1px solid rgba(0,0,0,0.06)',
+                }}
+              >
+                {displayedAvatar ? (
+                  <img
+                    src={displayedAvatar}
+                    alt={`${user.displayName} avatar preview`}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span>{profileInitials(displayName || user.displayName)}</span>
+                )}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label htmlFor="profile-avatar-input" className="btn-secondary" style={{ cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+                  {displayedAvatar ? 'Change photo' : 'Upload photo'}
+                </label>
+                <input
+                  id="profile-avatar-input"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={saving}
+                  onChange={async (e) => {
+                    setAvatarError(null);
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (!file) return;
+                    if (!file.type.startsWith('image/')) {
+                      setAvatarError('Please select an image file');
+                      return;
+                    }
+                    if (file.size > 2 * 1024 * 1024) {
+                      setAvatarError('Profile photo must be 2 MB or smaller');
+                      return;
+                    }
+                    try {
+                      const data = await readFileAsDataUrl(file);
+                      setAvatarPending(data);
+                      setAvatarCleared(false);
+                    } catch {
+                      setAvatarError('Could not read image');
+                    }
+                  }}
+                />
+                {(displayedAvatar || avatarPending) && (
+                  <button
+                    type="button"
+                    className="btn-ghost text-sm"
+                    style={{ alignSelf: 'flex-start' }}
+                    disabled={saving}
+                    onClick={() => {
+                      setAvatarPending(null);
+                      setAvatarCleared(true);
+                      setAvatarError(null);
+                    }}
+                  >
+                    Remove photo
+                  </button>
+                )}
+                <span className="form-section-hint">PNG or JPG · max 2 MB</span>
+                {avatarError && <span className="text-xs text-red-600" role="alert">{avatarError}</span>}
+              </div>
+            </div>
+            <div style={{ marginTop: 20 }}>
+              <label htmlFor="profile-about" className="form-label mb-2">
+                About me <span className="form-section-hint ml-1">Optional · max 160 characters</span>
+              </label>
+              <textarea
+                id="profile-about"
+                rows={3}
+                value={aboutMe}
+                onChange={(e) => setAboutMe(e.target.value.slice(0, 160))}
+                className="input-field resize-none"
+                placeholder="I love sharing homemade food with kind neighbors."
+                maxLength={160}
+              />
+              <div className="form-section-hint" style={{ textAlign: 'right' }}>
+                {aboutMe.length} / 160
+              </div>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <label htmlFor="profile-general-location" className="form-label mb-2">
+                General location <span className="form-section-hint ml-1">Optional</span>
+              </label>
+              <input
+                id="profile-general-location"
+                type="text"
+                value={generalLocation}
+                onChange={(e) => setGeneralLocation(e.target.value.slice(0, 80))}
+                className="input-field"
+                placeholder="Florentin, Tel Aviv"
+                maxLength={80}
+              />
+              <p className="form-section-hint" style={{ marginTop: 6 }}>
+                Only your general area is shown — never your exact pickup address.
+              </p>
+            </div>
+          </div>
+
           <div className="profile-form-card">
             <div className="form-section-header">
               <div>
@@ -3364,7 +3723,39 @@ function Profile({ user, donations = [], requests = [], reviews = [], onBack, on
               <div className="profile-save-title">Ready to update?</div>
               <div className="profile-save-copy">Your profile changes apply to future community interactions.</div>
             </div>
-            <div className="profile-save-actions"><button onClick={onBack} className="btn-secondary">Cancel</button><button onClick={() => onSave({ displayName, email, phone, dietaryPreferences, discreetPickup })} className="btn-primary">Save changes</button></div>
+            <div className="profile-save-actions">
+              <button onClick={onBack} className="btn-secondary" disabled={saving}>Cancel</button>
+              <button
+                onClick={() => {
+                  // Build the patch lazily so we send the smallest payload:
+                  // only include `profileImage` when there's an actual avatar
+                  // change (upload or explicit clear). Sending `undefined`
+                  // means "leave the existing avatar alone" — the backend
+                  // checks `b.profileImage !== undefined` for the same
+                  // tri-state semantics.
+                  const patch: Parameters<typeof onSave>[0] = {
+                    displayName,
+                    email,
+                    phone,
+                    dietaryPreferences,
+                    discreetPickup,
+                    aboutMe: aboutMe.trim() || null,
+                    generalLocation: generalLocation.trim() || null,
+                  };
+                  if (avatarPending) {
+                    patch.profileImage = { data: avatarPending };
+                  } else if (avatarCleared) {
+                    patch.profileImage = null;
+                  }
+                  onSave(patch);
+                }}
+                className="btn-primary"
+                disabled={saving}
+                aria-busy={saving}
+              >
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
           </div>
         </motion.div>
 

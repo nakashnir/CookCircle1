@@ -11,6 +11,13 @@ export interface User {
   discreetPickup: boolean;
   rating: number;
   reviewCount: number;
+  // Profile Trust v1 — all nullable. profileImageUrl is either a Cloudinary
+  // URL or a base64 data URL (fallback when CLOUDINARY_* env is not set).
+  // generalLocation is a short free-text "Florentin, Tel Aviv" style label;
+  // it is intentionally NOT the same field as a donation's exact address.
+  profileImageUrl?: string | null;
+  aboutMe?: string | null;
+  generalLocation?: string | null;
 }
 
 export interface Donation {
@@ -236,7 +243,24 @@ export const api = {
 
   updateUser: (
     userId: number,
-    patch: Partial<Pick<User, 'displayName' | 'email' | 'phone' | 'dietaryPreferences' | 'discreetPickup'>>,
+    patch: Partial<
+      Pick<
+        User,
+        | 'displayName'
+        | 'email'
+        | 'phone'
+        | 'dietaryPreferences'
+        | 'discreetPickup'
+        | 'aboutMe'
+        | 'generalLocation'
+      >
+    > & {
+      // Avatar payload mirrors the donation create/update image shape:
+      // { data: 'data:image/...;base64,...' } to set a new avatar,
+      // null to clear it (initials fallback re-applies). Omit to leave the
+      // current avatar untouched.
+      profileImage?: { data: string } | null;
+    },
   ) =>
     request<User>(`/users/${userId}`, {
       method: 'PATCH',

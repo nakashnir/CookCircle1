@@ -38,7 +38,12 @@ function placeholderFor(seed: string): MediaUploadResult {
   };
 }
 
-export async function uploadDonationImage(
+// Generic image upload — used by both donations and profile avatars.
+// Donations call `uploadDonationImage` (kept as a thin alias below) so the
+// existing call sites stay untouched; profile avatars call `uploadImage`
+// directly. The pipeline is identical: Cloudinary when configured, base64
+// data URL stored verbatim in Postgres as a fallback.
+export async function uploadImage(
   input: MediaUploadInput,
 ): Promise<MediaUploadResult> {
   const seed = input.hint ?? input.data?.slice(0, 32) ?? `${Date.now()}`;
@@ -79,3 +84,7 @@ export async function uploadDonationImage(
     return placeholderFor(seed);
   }
 }
+
+// Back-compat alias for the donation call sites. Same behavior; just a name
+// that reads correctly at the donation route.
+export const uploadDonationImage = uploadImage;

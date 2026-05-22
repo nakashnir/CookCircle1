@@ -12,7 +12,7 @@ import {
   type User,
 } from "@workspace/db";
 import { geocodeAddress, locationProvider } from "../lib/location";
-import { mediaProvider, uploadDonationImage } from "../lib/media";
+import { mediaProvider, uploadDonationImage, uploadImage } from "../lib/media";
 import { getSessionUserId, requireAuth } from "../lib/session";
 import { ensureSeed } from "./cookcircle-seed";
 
@@ -204,6 +204,12 @@ function shapeUser(u: User) {
     discreetPickup: u.discreetPickup,
     rating: u.rating,
     reviewCount: u.reviewCount,
+    // Profile Trust v1 — see safeUser in routes/auth.ts for the matching shape.
+    // profileImagePublicId is intentionally omitted from the public response;
+    // it's an internal handle used only for re-uploads and possible cleanup.
+    profileImageUrl: u.profileImageUrl ?? null,
+    aboutMe: u.aboutMe ?? null,
+    generalLocation: u.generalLocation ?? null,
   };
 }
 
@@ -264,6 +270,31 @@ router.get("/users", async (_req, res) => {
   res.json(rows.map(shapeUser));
 });
 
+// Avatar size budget. 2 MB after the base64 expansion (~33% inflation over raw
+// bytes); we measure the raw byte length of the decoded payload so the limit
+// matches the frontend "2 MB on disk" check rather than the wire size.
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const ABOUT_ME_MAX = 160;
+const GENERAL_LOCATION_MAX = 80;
+
+function parseDataUrlByteLength(dataUrl: string): number | null {
+  // data:image/png;base64,XXXX...
+  const comma = dataUrl.indexOf(",");
+  if (comma < 0) return null;
+  const header = dataUrl.slice(0, comma);
+  if (!header.startsWith("data:image/")) return null;
+  const isBase64 = header.includes(";base64");
+  const payload = dataUrl.slice(comma + 1);
+  if (!isBase64) {
+    // Non-base64 data URLs are extremely rare for images; treat the raw
+    // length as the byte count (worst case).
+    return payload.length;
+  }
+  // base64 → bytes: every 4 chars decode to 3 bytes, minus padding.
+  const padding = payload.endsWith("==") ? 2 : payload.endsWith("=") ? 1 : 0;
+  return Math.floor((payload.length * 3) / 4) - padding;
+}
+
 router.patch("/users/:id", requireAuth, async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) return bad(res, 400, "Invalid id");
@@ -284,6 +315,73 @@ router.patch("/users/:id", requireAuth, async (req: Request, res: Response) => {
   }
   if (typeof b.discreetPickup === "boolean")
     patch.discreetPickup = b.discreetPickup;
+
+  // Profile Trust v1 — about me + general location. Both are nullable; an
+  // empty string is normalized to null so the column doesn't end up storing
+  // whitespace. Length is enforced server-side because the frontend counter
+  // is convenience, not security.
+  if (b.aboutMe !== undefined) {
+    if (b.aboutMe === null) {
+      patch.aboutMe = null;
+    } else if (typeof b.aboutMe === "string") {
+      const trimmed = b.aboutMe.trim();
+      if (trimmed.length > ABOUT_ME_MAX) {
+        return bad(res, 400, `aboutMe must be ${ABOUT_ME_MAX} characters or fewer`);
+      }
+      patch.aboutMe = trimmed.length === 0 ? null : trimmed;
+    } else {
+      return bad(res, 400, "aboutMe must be a string");
+    }
+  }
+  if (b.generalLocation !== undefined) {
+    if (b.generalLocation === null) {
+      patch.generalLocation = null;
+    } else if (typeof b.generalLocation === "string") {
+      const trimmed = b.generalLocation.trim();
+      if (trimmed.length > GENERAL_LOCATION_MAX) {
+        return bad(
+          res,
+          400,
+          `generalLocation must be ${GENERAL_LOCATION_MAX} characters or fewer`,
+        );
+      }
+      patch.generalLocation = trimmed.length === 0 ? null : trimmed;
+    } else {
+      return bad(res, 400, "generalLocation must be a string");
+    }
+  }
+
+  // Avatar upload. The frontend sends `profileImage: { data: "data:image/...;base64,..." }`,
+  // mirroring the donation image shape so reviewers don't need to learn a
+  // second pipeline. `null` clears the avatar (initials fallback re-applies).
+  if (b.profileImage !== undefined) {
+    if (b.profileImage === null) {
+      patch.profileImageUrl = null;
+      patch.profileImagePublicId = null;
+    } else if (
+      b.profileImage &&
+      typeof b.profileImage === "object" &&
+      typeof b.profileImage.data === "string"
+    ) {
+      const data: string = b.profileImage.data;
+      const bytes = parseDataUrlByteLength(data);
+      if (bytes == null) {
+        return bad(res, 400, "profileImage.data must be a base64 image data URL");
+      }
+      if (bytes > MAX_AVATAR_BYTES) {
+        return bad(res, 400, "Profile image must be 2 MB or smaller");
+      }
+      const m = await uploadImage({
+        data,
+        hint: `avatar-${id}-${Date.now()}`,
+      });
+      patch.profileImageUrl = m.imageUrl;
+      patch.profileImagePublicId = m.imagePublicId;
+    } else {
+      return bad(res, 400, "profileImage must be { data: dataUrl } or null");
+    }
+  }
+
   if (Object.keys(patch).length === 0) {
     const [u] = await db
       .select()
@@ -614,8 +712,14 @@ router.patch("/donations/:id", requireAuth, async (req: Request, res: Response) 
             );
           }
           patch.status = next;
-          // Cancel any open requests when donor cancels a reserved donation.
-          if (existing.status === "reserved" && next === "cancelled") {
+          // Cancel any open pickup requests when the donor closes the listing
+          // (cancel or mark expired). Pending requests are now possible while
+          // the donation is still "available", so we must clean them up here
+          // too — not only on the reserved→cancelled path.
+          if (
+            (next === "cancelled" || next === "expired") &&
+            (existing.status === "available" || existing.status === "reserved")
+          ) {
             await tx
               .update(pickupRequestsTable)
               .set({ status: "cancelled" })
@@ -787,6 +891,25 @@ router.post(
             { http: 409 },
           );
         }
+        // Block duplicate active requests from the same requester for the same
+        // donation. Pending or approved counts as active; cancelled/completed
+        // requests are historical and may be superseded by a fresh request.
+        const existingActive = await tx
+          .select({ id: pickupRequestsTable.id })
+          .from(pickupRequestsTable)
+          .where(
+            and(
+              eq(pickupRequestsTable.donationId, donationId),
+              eq(pickupRequestsTable.requesterId, requesterId),
+              sql`${pickupRequestsTable.status} in ('pending','approved')`,
+            ),
+          );
+        if (existingActive.length > 0) {
+          throw Object.assign(
+            new Error("You already have an active request for this donation"),
+            { http: 409 },
+          );
+        }
         const [r] = await tx
           .insert(pickupRequestsTable)
           .values({
@@ -798,10 +921,11 @@ router.post(
             status: "pending",
           })
           .returning();
-        await tx
-          .update(donationsTable)
-          .set({ status: "reserved" })
-          .where(eq(donationsTable.id, donationId));
+        // NOTE: donation stays "available" while only pending requests exist.
+        // Multiple recipients can submit pending requests for the same donation
+        // and it remains visible on the public feed. The status only flips to
+        // "reserved" when the donor approves one specific request (see
+        // transitionRequest below).
         return r;
       })
       .catch((err: any) => {
@@ -885,27 +1009,41 @@ async function transitionRequest(
         .where(eq(pickupRequestsTable.id, requestId))
         .returning();
 
-      if (newStatus === "completed") {
+      if (newStatus === "approved") {
+        // Approval is the moment the donation actually leaves the public feed:
+        // donor has committed to a specific requester. Reserve the donation
+        // and cleanly auto-cancel any *other* pending requests so they don't
+        // dangle in a forever-pending state.
+        await tx
+          .update(donationsTable)
+          .set({ status: "reserved" })
+          .where(eq(donationsTable.id, r.donationId));
+        await tx
+          .update(pickupRequestsTable)
+          .set({ status: "cancelled" })
+          .where(
+            and(
+              eq(pickupRequestsTable.donationId, r.donationId),
+              sql`${pickupRequestsTable.id} <> ${requestId}`,
+              sql`${pickupRequestsTable.status} = 'pending'`,
+            ),
+          );
+      } else if (newStatus === "completed") {
         await tx
           .update(donationsTable)
           .set({ status: "picked_up" })
           .where(eq(donationsTable.id, r.donationId));
       } else if (newStatus === "cancelled") {
-        const [don] = await tx
-          .select()
-          .from(donationsTable)
-          .where(eq(donationsTable.id, r.donationId));
-        if (don && don.status === "reserved") {
-          const others = await tx
-            .select({ id: pickupRequestsTable.id })
-            .from(pickupRequestsTable)
-            .where(
-              and(
-                eq(pickupRequestsTable.donationId, r.donationId),
-                sql`${pickupRequestsTable.status} in ('pending','approved')`,
-              ),
-            );
-          if (others.length === 0) {
+        // If the cancelled request was the approved one, release the
+        // reservation so the donation can become available again. Any other
+        // pending requests were already auto-cancelled at approval time, so
+        // we always return the donation straight to "available" here.
+        if (r.status === "approved") {
+          const [don] = await tx
+            .select({ status: donationsTable.status })
+            .from(donationsTable)
+            .where(eq(donationsTable.id, r.donationId));
+          if (don && don.status === "reserved") {
             await tx
               .update(donationsTable)
               .set({ status: "available" })

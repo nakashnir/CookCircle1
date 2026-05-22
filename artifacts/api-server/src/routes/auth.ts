@@ -16,6 +16,12 @@ function safeUser(u: typeof usersTable.$inferSelect) {
     discreetPickup: u.discreetPickup,
     rating: u.rating,
     reviewCount: u.reviewCount,
+    // Profile Trust v1 fields. Must be kept in lockstep with `shapeUser` in
+    // routes/cookcircle.ts — `/auth/me` uses this shaper and the PATCH route
+    // uses the other one, and the frontend type assumes they match.
+    profileImageUrl: u.profileImageUrl ?? null,
+    aboutMe: u.aboutMe ?? null,
+    generalLocation: u.generalLocation ?? null,
   };
 }
 

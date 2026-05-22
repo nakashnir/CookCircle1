@@ -40,6 +40,16 @@ export const usersTable = pgTable("users", {
   discreetPickup: boolean("discreet_pickup").notNull().default(false),
   rating: doublePrecision("rating").notNull().default(0),
   reviewCount: integer("review_count").notNull().default(0),
+  // Profile Trust v1 — all nullable so the migration is non-destructive and
+  // existing users keep working with no backfill. Avatar storage mirrors the
+  // donation image flow (Cloudinary in production, base64 data URL fallback
+  // when Cloudinary env vars are not configured). aboutMe and generalLocation
+  // are bounded short strings; generalLocation is intentionally free-text and
+  // never participates in the exact-address reveal path on donations.
+  profileImageUrl: text("profile_image_url"),
+  profileImagePublicId: text("profile_image_public_id"),
+  aboutMe: varchar("about_me", { length: 160 }),
+  generalLocation: varchar("general_location", { length: 80 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

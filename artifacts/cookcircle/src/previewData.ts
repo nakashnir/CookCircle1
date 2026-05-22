@@ -20,6 +20,9 @@ export const PREVIEW_USERS: User[] = [
     discreetPickup: false,
     rating: 4.8,
     reviewCount: 12,
+    profileImageUrl: null,
+    aboutMe: 'Home cook in Florentin. I share what my kitchen can’t finish.',
+    generalLocation: 'Florentin, Tel Aviv',
   },
   {
     id: 2,
@@ -30,6 +33,9 @@ export const PREVIEW_USERS: User[] = [
     discreetPickup: true,
     rating: 4.5,
     reviewCount: 7,
+    profileImageUrl: null,
+    aboutMe: 'Family of four. Always grateful for surplus produce and bread.',
+    generalLocation: 'Ramat Gan',
   },
 ];
 
