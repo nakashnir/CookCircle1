@@ -1,0 +1,814 @@
+{
+  "project": "CookCircle demo food image pack",
+  "generated_at": "2026-06-05T09:41:19.589827Z",
+  "notes_he": "כל הנתונים הדמוגרפיים/משתמשים סינתטיים. מיקומי האיסוף הם מקומות אמיתיים בישראל עם קואורדינטות מקורבות לדמו.",
+  "image_count": 31,
+  "entries": [
+    {
+      "original_filename": "4F0BD854-38BB-4087-965F-9F3FA07FCCA8.jpg",
+      "new_filename": "01_veggie_wrap_red_cabbage_tomato.jpg",
+      "title_he": "טורטייה ירקות עם כרוב סגול ועגבנייה",
+      "title_en": "Veggie wrap with red cabbage and tomato",
+      "description_he": "טורטייה ביתית ממולאת ירקות טריים, כרוב סגול, עגבנייה וממרח קרמי. מתאים לאיסוף מהיר כארוחה קלה.",
+      "category": "wrap",
+      "tags_he": [
+        "טבעוני",
+        "קליל",
+        "ירקות"
+      ],
+      "servings": 1,
+      "demo_location": {
+        "place_he": "דיזנגוף סנטר",
+        "city_he": "תל אביב-יפו",
+        "address_he": "דיזנגוף 50, תל אביב-יפו",
+        "lat": 32.0756,
+        "lng": 34.7754
+      },
+      "donor_name_he": "מאיה לוי",
+      "status": "available",
+      "pickup_window_he": "היום 18:00-20:00",
+      "expires_in_hours": 8,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_0026.jpg",
+      "new_filename": "02_couscous_brussels_sprouts_mushrooms.jpg",
+      "title_he": "קוסקוס עם כרוב ניצנים ופטריות",
+      "title_en": "Couscous with Brussels sprouts and mushrooms",
+      "description_he": "צלחת קוסקוס ביתי עם כרוב ניצנים צלוי, פטריות ורוטב בצד. מנה משביעה בסגנון ביתי.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "ביתי",
+        "משביע"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "שוק הכרמל",
+        "city_he": "תל אביב-יפו",
+        "address_he": "רחוב הכרמל 11, תל אביב-יפו",
+        "lat": 32.0682,
+        "lng": 34.7674
+      },
+      "donor_name_he": "עידו כהן",
+      "status": "available",
+      "pickup_window_he": "היום 20:00-22:00",
+      "expires_in_hours": 12,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_0030.jpg",
+      "new_filename": "03_tofu_mushroom_curry_mashed_potatoes.jpg",
+      "title_he": "קארי טופו ופטריות עם פירה",
+      "title_en": "Tofu mushroom curry with mashed potatoes",
+      "description_he": "קארי חם עם קוביות טופו, פטריות, גזר וירקות לצד פירה חלק. מתאים לארוחת צהריים או ערב.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "חם",
+        "קארי"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "שרונה מרקט",
+        "city_he": "תל אביב-יפו",
+        "address_he": "אלוף קלמן מגן 3, תל אביב-יפו",
+        "lat": 32.0716,
+        "lng": 34.7866
+      },
+      "donor_name_he": "נועה ישראלי",
+      "status": "available",
+      "pickup_window_he": "מחר 10:00-12:00",
+      "expires_in_hours": 18,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_0510.jpg",
+      "new_filename": "04_tofu_hummus_crackers_microgreens.jpg",
+      "title_he": "קרקרים עם ממרח, טופו ונבטים",
+      "title_en": "Crackers with spread, tofu and microgreens",
+      "description_he": "נשנוש ביתי של קרקרים עם ממרח חומוס/קטניות, פרוסות טופו ונבטים טריים מעל.",
+      "category": "snack",
+      "tags_he": [
+        "טבעוני",
+        "נשנוש",
+        "טופו"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "נמל תל אביב",
+        "city_he": "תל אביב-יפו",
+        "address_he": "נמל תל אביב, תל אביב-יפו",
+        "lat": 32.0964,
+        "lng": 34.7748
+      },
+      "donor_name_he": "דניאל פרץ",
+      "status": "available",
+      "pickup_window_he": "מחר 17:00-19:00",
+      "expires_in_hours": 24,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_1776.jpg",
+      "new_filename": "05_tofu_broccoli_ramen_bowl.jpg",
+      "title_he": "קערת ראמן עם טופו וברוקולי",
+      "title_en": "Ramen bowl with tofu and broccoli",
+      "description_he": "אטריות ראמן עם טופו צרוב, ברוקולי, בצל ירוק ושומשום. מנה מהירה ומנחמת.",
+      "category": "noodles",
+      "tags_he": [
+        "טבעוני",
+        "אסייתי",
+        "טופו"
+      ],
+      "servings": 1,
+      "demo_location": {
+        "place_he": "כיכר השעון יפו",
+        "city_he": "תל אביב-יפו",
+        "address_he": "כיכר השעון, יפו",
+        "lat": 32.0543,
+        "lng": 34.7525
+      },
+      "donor_name_he": "שירה בן דוד",
+      "status": "available",
+      "pickup_window_he": "היום 18:00-20:00",
+      "expires_in_hours": 30,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_1780.jpg",
+      "new_filename": "06_gnocchi_arugula_blueberry_salad.jpg",
+      "title_he": "סלט ארוגולה עם ניוקי ואוכמניות",
+      "title_en": "Arugula salad with gnocchi and blueberries",
+      "description_he": "סלט רענן עם עלי ארוגולה, עגבניות שרי, אוכמניות וניוקי צרוב. מתאים כמנה קלילה ומיוחדת.",
+      "category": "salad",
+      "tags_he": [
+        "צמחוני",
+        "סלט",
+        "קליל"
+      ],
+      "servings": 1,
+      "demo_location": {
+        "place_he": "שוק מחנה יהודה",
+        "city_he": "ירושלים",
+        "address_he": "אגריפס 90, ירושלים",
+        "lat": 31.7857,
+        "lng": 35.212
+      },
+      "donor_name_he": "רועי מזרחי",
+      "status": "available",
+      "pickup_window_he": "היום 20:00-22:00",
+      "expires_in_hours": 36,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_2635.jpg",
+      "new_filename": "07_creamy_pasta_tofu_broccoli.jpg",
+      "title_he": "פסטה קרמית עם טופו וברוקולי",
+      "title_en": "Creamy pasta with tofu and broccoli",
+      "description_he": "פסטה קצרה ברוטב קרמי עם קוביות טופו, ברוקולי ותיבול עדין. מנה ביתית ומשביעה.",
+      "category": "pasta",
+      "tags_he": [
+        "צמחוני",
+        "פסטה",
+        "טופו"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "התחנה הראשונה ירושלים",
+        "city_he": "ירושלים",
+        "address_he": "דוד רמז 4, ירושלים",
+        "lat": 31.7687,
+        "lng": 35.2241
+      },
+      "donor_name_he": "תמר אברהם",
+      "status": "available",
+      "pickup_window_he": "מחר 10:00-12:00",
+      "expires_in_hours": 8,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_2636.jpg",
+      "new_filename": "08_banana_peanut_butter_snack.jpg",
+      "title_he": "בננה עם חמאת בוטנים",
+      "title_en": "Banana with peanut butter",
+      "description_he": "נשנוש מתוק ופשוט: בננה עם חמאת בוטנים. מתאים כקינוח קטן או ארוחת ביניים.",
+      "category": "dessert",
+      "tags_he": [
+        "טבעוני",
+        "מתוק",
+        "נשנוש"
+      ],
+      "servings": 1,
+      "demo_location": {
+        "place_he": "גן סאקר",
+        "city_he": "ירושלים",
+        "address_he": "גן סאקר, ירושלים",
+        "lat": 31.7799,
+        "lng": 35.2064
+      },
+      "donor_name_he": "אורי גולן",
+      "status": "available",
+      "pickup_window_he": "מחר 17:00-19:00",
+      "expires_in_hours": 12,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_3293.jpg",
+      "new_filename": "09_rice_vegan_cutlets_green_salad.jpg",
+      "title_he": "אורז עם קציצות טבעוניות וסלט ירוק",
+      "title_en": "Rice with vegan cutlets and green salad",
+      "description_he": "צלחת ביתית עם אורז מתובל, קציצות/נתחים טבעוניים וסלט ירוק עם ממרח בצד.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "אורז",
+        "ביתי"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "מרכז הכרמל",
+        "city_he": "חיפה",
+        "address_he": "שדרות הנשיא, חיפה",
+        "lat": 32.8039,
+        "lng": 34.9869
+      },
+      "donor_name_he": "יעל ביטון",
+      "status": "available",
+      "pickup_window_he": "היום 18:00-20:00",
+      "expires_in_hours": 18,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_3338.jpg",
+      "new_filename": "10_chili_sin_carne_with_rolls.jpg",
+      "title_he": "צ׳ילי שעועית עם לחמניות",
+      "title_en": "Bean chili with rolls",
+      "description_he": "צ׳ילי עגבניות ושעועית בסגנון ביתי, מוגש לצד לחמניות קטנות. מנה חמה וממלאת.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "חם",
+        "קטניות"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "שוק תלפיות",
+        "city_he": "חיפה",
+        "address_he": "סירקין 35, חיפה",
+        "lat": 32.8122,
+        "lng": 34.9964
+      },
+      "donor_name_he": "איתי צור",
+      "status": "available",
+      "pickup_window_he": "היום 20:00-22:00",
+      "expires_in_hours": 24,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_3390.jpg",
+      "new_filename": "11_avocado_cucumber_tomato_salad.jpg",
+      "title_he": "סלט אבוקדו, מלפפון ועגבנייה",
+      "title_en": "Avocado cucumber tomato salad",
+      "description_he": "סלט טרי קצוץ עם אבוקדו, מלפפון, עגבנייה וגרעינים מעל. מתאים כתוספת או ארוחה קלה.",
+      "category": "salad",
+      "tags_he": [
+        "טבעוני",
+        "סלט",
+        "טרי"
+      ],
+      "servings": 1,
+      "demo_location": {
+        "place_he": "פארק הירקון",
+        "city_he": "תל אביב-יפו",
+        "address_he": "פארק הירקון, תל אביב-יפו",
+        "lat": 32.1,
+        "lng": 34.811
+      },
+      "donor_name_he": "רוני שפירא",
+      "status": "available",
+      "pickup_window_he": "מחר 10:00-12:00",
+      "expires_in_hours": 30,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_3581.jpg",
+      "new_filename": "12_soft_tacos_corn_beans_greens.jpg",
+      "title_he": "טאקו רך עם תירס, שעועית ועלים ירוקים",
+      "title_en": "Soft tacos with corn, beans and greens",
+      "description_he": "טאקוס קטנים במילוי תירס, שעועית, בצל ועלים ירוקים. מנה קלילה בסגנון מקסיקני.",
+      "category": "wrap",
+      "tags_he": [
+        "טבעוני",
+        "מקסיקני",
+        "ירקות"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "קניון שבעת הכוכבים",
+        "city_he": "הרצליה",
+        "address_he": "שבעת הכוכבים 8, הרצליה",
+        "lat": 32.1653,
+        "lng": 34.8276
+      },
+      "donor_name_he": "ליאור חדד",
+      "status": "available",
+      "pickup_window_he": "מחר 17:00-19:00",
+      "expires_in_hours": 36,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_3861.jpg",
+      "new_filename": "13_tofu_broccoli_potato_bowl.jpg",
+      "title_he": "קערת טופו, ברוקולי ותפוחי אדמה",
+      "title_en": "Tofu, broccoli and potato bowl",
+      "description_he": "קערה משביעה עם קוביות טופו, ברוקולי, תפוחי אדמה ורוטב קרמי מעל.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "טופו",
+        "משביע"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "פארק רעננה",
+        "city_he": "רעננה",
+        "address_he": "פארק רעננה, רעננה",
+        "lat": 32.1912,
+        "lng": 34.8542
+      },
+      "donor_name_he": "מאיה לוי",
+      "status": "available",
+      "pickup_window_he": "היום 18:00-20:00",
+      "expires_in_hours": 8,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_4393.jpg",
+      "new_filename": "14_tofu_noodle_soup.jpg",
+      "title_he": "מרק אטריות עם טופו וירקות",
+      "title_en": "Tofu noodle soup",
+      "description_he": "מרק אטריות חם עם טופו, ירקות ורוטב עדין. מתאים לערב או ליום קר.",
+      "category": "soup",
+      "tags_he": [
+        "טבעוני",
+        "מרק",
+        "אסייתי"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "קניון ערים",
+        "city_he": "כפר סבא",
+        "address_he": "ויצמן 63, כפר סבא",
+        "lat": 32.1774,
+        "lng": 34.9076
+      },
+      "donor_name_he": "עידו כהן",
+      "status": "available",
+      "pickup_window_he": "היום 20:00-22:00",
+      "expires_in_hours": 12,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_4752.jpg",
+      "new_filename": "15_rice_bean_chili_pita.jpg",
+      "title_he": "אורז עם צ׳ילי שעועית ופיתה",
+      "title_en": "Rice with bean chili and pita",
+      "description_he": "אורז לבן עם תבשיל עגבניות, שעועית ותירס, לצד אבוקדו ופיתה. מנה ביתית ומזינה.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "קטניות",
+        "אורז"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "פארק לאומי רמת גן",
+        "city_he": "רמת גן",
+        "address_he": "פארק לאומי, רמת גן",
+        "lat": 32.0456,
+        "lng": 34.8217
+      },
+      "donor_name_he": "נועה ישראלי",
+      "status": "available",
+      "pickup_window_he": "מחר 10:00-12:00",
+      "expires_in_hours": 18,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_5059.jpg",
+      "new_filename": "16_spaghetti_tomato_sauce.jpg",
+      "title_he": "ספגטי ברוטב עגבניות",
+      "title_en": "Spaghetti with tomato sauce",
+      "description_he": "ספגטי ביתי ברוטב עגבניות פשוט. מתאים כמנה מהירה לילדים או לסטודנטים.",
+      "category": "pasta",
+      "tags_he": [
+        "טבעוני",
+        "פסטה",
+        "פשוט"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "קניון גבעתיים",
+        "city_he": "גבעתיים",
+        "address_he": "יצחק רבין 53, גבעתיים",
+        "lat": 32.0677,
+        "lng": 34.8099
+      },
+      "donor_name_he": "דניאל פרץ",
+      "status": "available",
+      "pickup_window_he": "מחר 17:00-19:00",
+      "expires_in_hours": 24,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_5297.jpg",
+      "new_filename": "17_rice_tofu_corn_spinach_bowl.jpg",
+      "title_he": "קערת אורז עם טופו, תירס וירוקים",
+      "title_en": "Rice bowl with tofu, corn and greens",
+      "description_he": "קערת אורז עם טופו מתובל, תירס, עגבניות, עלים ירוקים ורוטב קרמי בצד.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "אורז",
+        "טופו"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "מדיטק חולון",
+        "city_he": "חולון",
+        "address_he": "גולדה מאיר 6, חולון",
+        "lat": 32.015,
+        "lng": 34.7754
+      },
+      "donor_name_he": "שירה בן דוד",
+      "status": "available",
+      "pickup_window_he": "היום 18:00-20:00",
+      "expires_in_hours": 30,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_5709.jpg",
+      "new_filename": "18_granola_berries_breakfast_bowl.jpg",
+      "title_he": "קערת גרנולה עם פירות יער",
+      "title_en": "Granola bowl with berries",
+      "description_he": "קערת בוקר עם גרנולה, אוכמניות ופירות יער. מתאימה כארוחת בוקר קלה.",
+      "category": "breakfast",
+      "tags_he": [
+        "צמחוני",
+        "בוקר",
+        "מתוק"
+      ],
+      "servings": 1,
+      "demo_location": {
+        "place_he": "טיילת בת ים",
+        "city_he": "בת ים",
+        "address_he": "טיילת בת ים",
+        "lat": 32.0192,
+        "lng": 34.7382
+      },
+      "donor_name_he": "רועי מזרחי",
+      "status": "available",
+      "pickup_window_he": "היום 20:00-22:00",
+      "expires_in_hours": 36,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_6565.jpg",
+      "new_filename": "19_quinoa_vegetable_salad.jpg",
+      "title_he": "סלט קינואה וירקות צבעוני",
+      "title_en": "Colorful quinoa vegetable salad",
+      "description_he": "סלט קינואה עם ירקות טריים, ברוקולי, עגבניות ועלים ירוקים. מנה קלה ורעננה.",
+      "category": "salad",
+      "tags_he": [
+        "טבעוני",
+        "קינואה",
+        "סלט"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "מכון ויצמן",
+        "city_he": "רחובות",
+        "address_he": "הרצל 234, רחובות",
+        "lat": 31.9044,
+        "lng": 34.8092
+      },
+      "donor_name_he": "תמר אברהם",
+      "status": "available",
+      "pickup_window_he": "מחר 10:00-12:00",
+      "expires_in_hours": 8,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_6583.jpg",
+      "new_filename": "20_quinoa_vegetable_curry_salad.jpg",
+      "title_he": "קינואה עם ירקות בקארי וסלט צד",
+      "title_en": "Quinoa with curried vegetables and side salad",
+      "description_he": "קינואה לצד ירקות מבושלים בתיבול קארי וסלט עגבניות ועלים. ארוחה מאוזנת ומשביעה.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "קינואה",
+        "קארי"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "סינמה סיטי ראשון לציון",
+        "city_he": "ראשון לציון",
+        "address_he": "ילדי טהרן 3, ראשון לציון",
+        "lat": 31.9899,
+        "lng": 34.7718
+      },
+      "donor_name_he": "אורי גולן",
+      "status": "available",
+      "pickup_window_he": "מחר 17:00-19:00",
+      "expires_in_hours": 12,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_6754.jpg",
+      "new_filename": "21_curried_rice_cabbage_tomato_bowl.jpg",
+      "title_he": "אורז מתובל עם כרוב סגול ועגבנייה",
+      "title_en": "Curried rice with red cabbage and tomato",
+      "description_he": "קערת אורז מתובל בסגנון קארי עם כרוב סגול, עגבניות ועלים ירוקים.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "אורז",
+        "ירקות"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "קניון אבנת",
+        "city_he": "פתח תקווה",
+        "address_he": "ז׳בוטינסקי 72, פתח תקווה",
+        "lat": 32.0923,
+        "lng": 34.8649
+      },
+      "donor_name_he": "יעל ביטון",
+      "status": "available",
+      "pickup_window_he": "היום 18:00-20:00",
+      "expires_in_hours": 18,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_8274.jpg",
+      "new_filename": "22_berry_smoothie_bowl_granola.jpg",
+      "title_he": "קערת סמודי פירות יער עם גרנולה",
+      "title_en": "Berry smoothie bowl with granola",
+      "description_he": "סמודי סמיך מפירות יער עם גרנולה, זרעים וממרח אגוזים מעל. מתאים לבוקר או קינוח.",
+      "category": "breakfast",
+      "tags_he": [
+        "טבעוני",
+        "מתוק",
+        "בוקר"
+      ],
+      "servings": 1,
+      "demo_location": {
+        "place_he": "כיכר העצמאות",
+        "city_he": "נתניה",
+        "address_he": "כיכר העצמאות, נתניה",
+        "lat": 32.3329,
+        "lng": 34.8516
+      },
+      "donor_name_he": "איתי צור",
+      "status": "available",
+      "pickup_window_he": "היום 20:00-22:00",
+      "expires_in_hours": 24,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_8278.jpg",
+      "new_filename": "23_red_lentil_soup.jpg",
+      "title_he": "מרק עדשים כתום",
+      "title_en": "Red lentil soup",
+      "description_he": "מרק עדשים כתום סמיך עם בצל ירוק ושומשום. מנה חמה, פשוטה ומנחמת.",
+      "category": "soup",
+      "tags_he": [
+        "טבעוני",
+        "מרק",
+        "קטניות"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "קניון עזריאלי מודיעין",
+        "city_he": "מודיעין-מכבים-רעות",
+        "address_he": "לב העיר 2, מודיעין-מכבים-רעות",
+        "lat": 31.8996,
+        "lng": 35.0104
+      },
+      "donor_name_he": "רוני שפירא",
+      "status": "available",
+      "pickup_window_he": "מחר 10:00-12:00",
+      "expires_in_hours": 30,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_8294.jpg",
+      "new_filename": "24_chickpea_cauliflower_curry_bowl.jpg",
+      "title_he": "תבשיל חומוס וכרובית בקארי",
+      "title_en": "Chickpea cauliflower curry bowl",
+      "description_he": "קערת תבשיל עם חומוס, כרובית, ירקות ותיבול קארי. מנה עשירה ומשביעה.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "קארי",
+        "קטניות"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "אוניברסיטת בן-גוריון",
+        "city_he": "באר שבע",
+        "address_he": "שדרות בן-גוריון 1, באר שבע",
+        "lat": 31.2622,
+        "lng": 34.8015
+      },
+      "donor_name_he": "ליאור חדד",
+      "status": "available",
+      "pickup_window_he": "מחר 17:00-19:00",
+      "expires_in_hours": 36,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_8336.jpg",
+      "new_filename": "25_roasted_vegetables_tofu_cutlet_plate.jpg",
+      "title_he": "ירקות צלויים עם קציצת טופו וסלט",
+      "title_en": "Roasted vegetables with tofu cutlet and salad",
+      "description_he": "צלחת ירקות צלויים, קציצה/שניצלון טופו, סלט ירוק ורוטב בצד. ארוחה ביתית מלאה.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "ירקות",
+        "טופו"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "העיר העתיקה באר שבע",
+        "city_he": "באר שבע",
+        "address_he": "העיר העתיקה, באר שבע",
+        "lat": 31.2433,
+        "lng": 34.7925
+      },
+      "donor_name_he": "מאיה לוי",
+      "status": "available",
+      "pickup_window_he": "היום 18:00-20:00",
+      "expires_in_hours": 8,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_8446.jpg",
+      "new_filename": "26_mini_vegan_burgers.jpg",
+      "title_he": "מיני בורגרים טבעוניים",
+      "title_en": "Mini vegan burgers",
+      "description_he": "שני מיני בורגרים בלחמניות קטנות עם מילוי צמחי וירקות. מתאים לשיתוף או נשנוש.",
+      "category": "burger",
+      "tags_he": [
+        "טבעוני",
+        "בורגר",
+        "קליל"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "קניון סימול",
+        "city_he": "אשדוד",
+        "address_he": "הגדוד העברי 6, אשדוד",
+        "lat": 31.8044,
+        "lng": 34.6553
+      },
+      "donor_name_he": "עידו כהן",
+      "status": "available",
+      "pickup_window_he": "היום 20:00-22:00",
+      "expires_in_hours": 12,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_8854.jpg",
+      "new_filename": "27_grilled_zucchini_hummus_vegetables.jpg",
+      "title_he": "קישואים צרובים עם חומוס וירקות",
+      "title_en": "Grilled zucchini with hummus and vegetables",
+      "description_he": "צלחת קישואים צרובים, חומוס, גזר ועלים ירוקים. מנה קלה לאיסוף מהיר.",
+      "category": "snack",
+      "tags_he": [
+        "טבעוני",
+        "חומוס",
+        "ירקות"
+      ],
+      "servings": 1,
+      "demo_location": {
+        "place_he": "פארק המדע נס ציונה",
+        "city_he": "נס ציונה",
+        "address_he": "פארק המדע, נס ציונה",
+        "lat": 31.9224,
+        "lng": 34.8019
+      },
+      "donor_name_he": "נועה ישראלי",
+      "status": "available",
+      "pickup_window_he": "מחר 10:00-12:00",
+      "expires_in_hours": 18,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_8941.jpg",
+      "new_filename": "28_hummus_dips_toast_plate.jpg",
+      "title_he": "חומוס ומטבלים עם טוסטים",
+      "title_en": "Hummus and dips with toast",
+      "description_he": "צלחת חומוס ומטבלים לצד פרוסות לחם קלוי. מתאים לארוחה קלה או לשיתוף.",
+      "category": "snack",
+      "tags_he": [
+        "טבעוני",
+        "חומוס",
+        "שיתוף"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "מרכז העיר הוד השרון",
+        "city_he": "הוד השרון",
+        "address_he": "דרך רמתיים, הוד השרון",
+        "lat": 32.1506,
+        "lng": 34.885
+      },
+      "donor_name_he": "דניאל פרץ",
+      "status": "available",
+      "pickup_window_he": "מחר 17:00-19:00",
+      "expires_in_hours": 24,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_9717.jpg",
+      "new_filename": "29_rice_kimchi_tempeh_dumplings_plate.jpg",
+      "title_he": "אורז עם קימצ׳י, טמפה וכיסונים",
+      "title_en": "Rice with kimchi, tempeh and dumplings",
+      "description_he": "צלחת אסייתית עם אורז לבן, קימצ׳י/ירקות מוחמצים, טמפה וכיסונים סגולים. מנה מיוחדת ומשביעה.",
+      "category": "main",
+      "tags_he": [
+        "טבעוני",
+        "אסייתי",
+        "אורז"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "הטיילת באילת",
+        "city_he": "אילת",
+        "address_he": "הטיילת, אילת",
+        "lat": 29.5497,
+        "lng": 34.953
+      },
+      "donor_name_he": "שירה בן דוד",
+      "status": "available",
+      "pickup_window_he": "היום 18:00-20:00",
+      "expires_in_hours": 30,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_9761.jpg",
+      "new_filename": "30_gnocchi_mushroom_nutritional_yeast.jpg",
+      "title_he": "ניוקי עם פטריות ותיבול שמרי בירה",
+      "title_en": "Gnocchi with mushrooms and nutritional yeast",
+      "description_he": "ניוקי צרוב עם פטריות ותיבול עשיר מעל. מנה ביתית חמה שמתאימה לארוחת ערב.",
+      "category": "main",
+      "tags_he": [
+        "צמחוני",
+        "ניוקי",
+        "פטריות"
+      ],
+      "servings": 2,
+      "demo_location": {
+        "place_he": "גן המייסדים",
+        "city_he": "חדרה",
+        "address_he": "גן המייסדים, חדרה",
+        "lat": 32.438,
+        "lng": 34.919
+      },
+      "donor_name_he": "רועי מזרחי",
+      "status": "available",
+      "pickup_window_he": "היום 20:00-22:00",
+      "expires_in_hours": 36,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    },
+    {
+      "original_filename": "IMG_9778.jpg",
+      "new_filename": "31_banana_oatmeal_nut_butter_bowl.jpg",
+      "title_he": "דייסת שיבולת שועל עם בננה וחמאת אגוזים",
+      "title_en": "Oatmeal with banana and nut butter",
+      "description_he": "קערת שיבולת שועל מתוקה עם בננה, חמאת אגוזים ותוספות קראנצ׳יות. מתאימה לבוקר או קינוח.",
+      "category": "breakfast",
+      "tags_he": [
+        "טבעוני",
+        "בוקר",
+        "מתוק"
+      ],
+      "servings": 1,
+      "demo_location": {
+        "place_he": "קניון עזריאלי עכו",
+        "city_he": "עכו",
+        "address_he": "דרך הארבעה 2, עכו",
+        "lat": 32.9267,
+        "lng": 35.0827
+      },
+      "donor_name_he": "תמר אברהם",
+      "status": "available",
+      "pickup_window_he": "מחר 10:00-12:00",
+      "expires_in_hours": 8,
+      "confidence_note_he": "זיהוי לפי צילום בלבד; השם נבחר כמייצג סביר לדמו."
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+You are working inside the CookCircle project repo.
+
+Goal
+Seed the app with realistic demo donations using the food images from this ZIP so the final presentation looks like a real active product with real users posting food.
+
+Context
+I will place/extract this ZIP into the project. The package contains:
+- images/*.jpg — renamed food images with clean file names.
+- metadata/cookcircle_demo_donations.json — the source of truth for demo donation data.
+- metadata/image_name_mapping.csv — original-to-new image mapping.
+
+Important constraints
+- Do not break the existing app, schema, auth, upload flow, or production-like settings.
+- Do not invent real people. Use only the synthetic donor names from the JSON or create clearly fake demo users.
+- Pickup locations must be real places in Israel. Use the provided locations/lat/lng from the JSON unless the existing DB already has a location format that requires transformation.
+- Keep images local if the app supports local/static assets. If the app requires Cloudinary/media upload, inspect the existing media implementation and choose the smallest safe demo path. Do not require a paid/manual service unless unavoidable.
+- Preserve the existing seed/test users. Add demo data safely and idempotently.
+- Make the seed repeatable: running it twice should not create duplicate donations.
+- Use future-ish expiration/pickup times generated at runtime where possible so the donations appear available during the demo.
+
+Align
+First inspect the repo before changing anything:
+- package.json scripts
+- DB schema/migrations/seed files
+- donation model/table fields
+- image/media handling
+- location fields and Google Maps integration
+- current login/demo user flow
+
+Execute
+Implement the smallest clean solution that makes the app show these food donations as active/available:
+1. Copy or serve the images from an appropriate repo location, for example public/demo-food/ or the existing uploads/static media directory.
+2. Add a demo seed script or extend the existing seed mechanism using metadata/cookcircle_demo_donations.json.
+3. Create synthetic demo donor users if needed.
+4. Insert one donation per image with:
+   - title from title_he
+   - description from description_he
+   - servings/quantity from servings
+   - category/tags from the JSON if compatible with schema
+   - image URL/path linked correctly to the copied image
+   - available status
+   - pickup address/city/place/lat/lng from demo_location
+   - pickup/expiration dates set relative to now so the cards look active
+5. If the schema has slightly different names, map the fields carefully and document the mapping.
+6. Add an npm/pnpm script if useful, for example `pnpm seed:demo-food`, but only if consistent with the repo.
+
+Evidence required
+After implementation, report:
+- Exactly which files were added/changed.
+- Which command seeds the demo data.
+- Which command verifies DB rows were inserted.
+- Count of inserted demo donations and demo users.
+- The image URL/path format used by the UI.
+- One sample inserted record showing title, image path, city/address, lat/lng, status, and expiration/pickup time.
+- Build/typecheck result if the repo has those scripts.
+
+QA Gate
+Before saying done, verify:
+- No duplicate rows after rerunning the seed.
+- App still builds or typechecks.
+- Donation feed shows image cards, not broken image icons.
+- Locations render in the same way normal user-created donations render.
+- All demo data is clearly synthetic except public real pickup places.
+- No secrets, API keys, or private paths were committed/printed.
+
+Return status as one of:
+- READY_FOR_MANUAL_DEMO if everything works.
+- NEEDS_ENV_OR_DB_ACCESS if you need me to run a command or provide access.
+- BLOCKED with the exact blocker and evidence.

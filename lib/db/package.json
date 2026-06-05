@@ -9,7 +9,8 @@
   },
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
-    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
+    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
+    "seed:demo-food": "node ./scripts/seed-demo-food.mjs"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",
