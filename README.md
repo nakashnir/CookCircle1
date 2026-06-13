@@ -44,6 +44,9 @@ lib/
       seed-demo-food.mjs   Idempotent Israeli demo-food seed (see below)
 demo-assets/
   food-pack/         Curated demo food pack (images + metadata JSON/CSV/docs)
+deploy/
+  start-cookcircle.sh   One-command start (installed at ~/start-cookcircle.sh)
+  stop-cookcircle.sh    One-command stop  (installed at ~/stop-cookcircle.sh)
 .env.example         Documented env vars (no secrets; real .env is gitignored)
 ```
 
@@ -61,7 +64,7 @@ The web app proxies `/api/*` to the API server during local dev.
 
 ## Running on the college server (live demo)
 
-The app is already deployed and running on the college server. These steps cover logging in, checking it, restarting it, and opening it.
+The app is deployed on the college server. Two helper scripts make it a **single command** to start or stop — they are installed in the home directory (`~/start-cookcircle.sh`, `~/stop-cookcircle.sh`); their source is tracked in `deploy/`.
 
 ### 1. Log in to the server
 
@@ -71,83 +74,58 @@ ssh nakashni@vmedu470.mtacloud.co.il
 
 Enter the password (sent separately — it is **not** stored in this repo).
 
-### 2. Go to the project directory
+### 2. Start the web
 
 ```bash
-cd ~/apps/cookcircle
+bash ~/start-cookcircle.sh
 ```
 
-### 3. Check the app is running
+On success it prints `CookCircle started. Open: http://vmedu470.mtacloud.co.il:8080`.
+Safe to run twice — if it's already up it just says so.
 
-```bash
-curl -s http://127.0.0.1:8080/api/healthz      # -> {"status":"ok"}
-curl -s http://127.0.0.1:8080/api/health        # adapter status: db / media / location
-```
-
-A `200` / `{"status":"ok"}` means the API is live.
-
-### 4. Restart the app
-
-The app currently runs as a single backgrounded Node process (no process manager).
-`node` is on the PATH in an interactive SSH session (loaded via nvm).
-
-```bash
-# stop the current server
-pkill -f 'api-server/dist/index.mjs'
-
-# start it again with env loaded from .env
-cd ~/apps/cookcircle/artifacts/api-server
-set -a; source ../../.env; set +a
-nohup node --enable-source-maps dist/index.mjs > ~/cookcircle-server.log 2>&1 &
-
-# confirm
-curl -s http://127.0.0.1:8080/api/healthz
-```
-
-> If you pulled new code, rebuild first so `_static` (and the demo images in `public/donation-images/`) are regenerated:
-> ```bash
-> cd ~/apps/cookcircle
-> pnpm install
-> pnpm --filter @workspace/cookcircle run build
-> pnpm --filter @workspace/api-server run build
-> ```
-
-### 5. Open the app in your browser
-
-**Option A — direct (simplest):** the server exposes port 8080 publicly, so just open:
+### 3. Open the app in your browser
 
 ```
 http://vmedu470.mtacloud.co.il:8080
 ```
 
-**Option B — SSH tunnel (if direct access is blocked):** in a **new** PowerShell/terminal window on your own machine:
+If your network blocks port 8080, use an SSH tunnel instead — in a **new** terminal on your own machine:
 
 ```bash
 ssh -L 18080:127.0.0.1:8080 nakashni@vmedu470.mtacloud.co.il
 ```
 
-Leave that window open, then browse to:
+then open `http://127.0.0.1:18080`.
 
+### 4. Stop the web (free the port)
+
+```bash
+bash ~/stop-cookcircle.sh
 ```
-http://127.0.0.1:18080
+
+### 5. Check status anytime
+
+```bash
+curl -s http://127.0.0.1:8080/api/healthz      # -> {"status":"ok"} when running
 ```
+
+> **What the scripts do / manual alternative.** The app is a single backgrounded Node process serving both `/api/*` and the web bundle on port 8080. `.env` must include `PORT=8080`. To run it by hand:
+> ```bash
+> set -a; source <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' ~/apps/cookcircle/.env); set +a
+> nohup node --enable-source-maps ~/apps/cookcircle/artifacts/api-server/dist/index.mjs > ~/cookcircle-server.log 2>&1 &
+> ```
+> Stop with `pkill -f 'api-server/dist/index.mjs'`. If you pulled new frontend code, rebuild first: `pnpm install && pnpm --filter @workspace/cookcircle run build`.
 
 ### Quick reference (תקציר — גישה לשרת)
 
 ```bash
-# בשרת / on the server
-ssh nakashni@vmedu470.mtacloud.co.il
-cd ~/apps/cookcircle
-curl -s http://127.0.0.1:8080/api/healthz          # בדיקה שהאתר חי
-pkill -f 'api-server/dist/index.mjs'               # עצירה
-cd artifacts/api-server && set -a; source ../../.env; set +a
-nohup node --enable-source-maps dist/index.mjs > ~/cookcircle-server.log 2>&1 &   # הפעלה מחדש
-
-# בדפדפן / in the browser
-# ישירות:  http://vmedu470.mtacloud.co.il:8080
+ssh nakashni@vmedu470.mtacloud.co.il   # התחברות לשרת
+bash ~/start-cookcircle.sh             # הפעלת האתר
+bash ~/stop-cookcircle.sh              # עצירת האתר (כיבוי הפורט)
+# בדפדפן:  http://vmedu470.mtacloud.co.il:8080
 ```
 
-> **Note:** `pm2` is not installed on the server, so `pm2 restart all` / `pm2 status` will not work — use the `node` commands above. The process does not auto-restart on reboot; installing a process manager (pm2 / systemd) is a recommended future improvement.
+> **Note:** the app does not auto-restart on reboot (no pm2/systemd yet) — run `~/start-cookcircle.sh` after a reboot. `pm2` is **not** installed, so `pm2 ...` commands will not work.
 
 ## Database
 
@@ -231,7 +209,8 @@ See `.env.example` for the full list of env vars. Real secrets live only in the 
 ### Not configured / known gaps
 
 - ⚠️ **Cloudinary** and **Google Maps** keys are not set on the server → both adapters run in `local` fallback (functional, but no real CDN/geocoding).
-- ⚠️ **No process manager** — the app runs as a plain backgrounded `node` process and does **not** auto-restart on server reboot. (pm2 / systemd recommended.)
+- ⚠️ **No process manager** — the app runs as a plain backgrounded `node` process (start/stop via `deploy/` scripts) and does **not** auto-restart on server reboot. (pm2 / systemd recommended.)
+- ℹ️ `PORT=8080` must be present in the server `.env` (the app requires it at boot).
 - ⚠️ `artifacts/mockup-sandbox` has a pre-existing TypeScript error (Vite version drift between `vite@5` and `vite@7` plugin types). It is the design-mockup package only and does **not** affect the running app; the app packages (`api-server`, `cookcircle`, `lib/*`) typecheck clean.
 - ⚠️ **No automated tests** are configured.
 - ⚠️ Some tracked files carry mixed CRLF/LF line endings; adding a `.gitattributes` (`* text=auto eol=lf`) would normalize this.
