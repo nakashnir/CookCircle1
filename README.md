@@ -2,6 +2,8 @@
 
 Neighborhood food-donation MVP. Donors post surplus food, neighbors reserve and pick it up, and the recipient leaves a review for the donor after a completed pickup. Built as a pnpm monorepo with three artifacts.
 
+**Live demo (college server):** http://vmedu470.mtacloud.co.il:8080
+
 ## Approved scope
 
 1. Donation lifecycle (`available` → `reserved` → `picked_up` / `cancelled` / `expired`)
@@ -18,14 +20,34 @@ Out of scope: chat, AI, shared cooking, admin, payments, delivery logistics, adv
 
 - **Web** (`artifacts/cookcircle`) — React 18 + Vite + Tailwind 3
 - **API** (`artifacts/api-server`) — Express + Drizzle ORM
-- **Database** — Postgres (Replit Postgres in this workspace)
+- **Database** — Postgres. Local Postgres on the college-server deployment (`127.0.0.1:5432`); Replit Postgres in the original workspace.
 - **Mockup sandbox** (`artifacts/mockup-sandbox`) — design preview server
 
 Shared libraries live in `lib/` (Drizzle schema in `lib/db`).
 
-## Run
+In production the API server serves both `/api/*` **and** the compiled web bundle (`artifacts/cookcircle/_static`) from a single origin, so the whole app is reachable on one port (8080).
 
-Replit auto-starts the workflows. To run locally:
+## Project layout
+
+```
+artifacts/
+  api-server/        Express API (routes, media + location adapters, seed)
+  cookcircle/        React web app
+    src/lib/api.ts   Typed client for the API (single fetch entry point)
+    public/
+      donation-images/   31 demo donation photos (served at /donation-images/*)
+    _static/         Vite production bundle (gitignored; rebuilt on deploy)
+  mockup-sandbox/    Component preview server
+lib/
+  db/                Drizzle schema, client, push/migrate scripts
+    scripts/
+      seed-demo-food.mjs   Idempotent Israeli demo-food seed (see below)
+demo-assets/
+  food-pack/         Curated demo food pack (images + metadata JSON/CSV/docs)
+.env.example         Documented env vars (no secrets; real .env is gitignored)
+```
+
+## Local development
 
 ```bash
 pnpm install
@@ -35,7 +57,97 @@ pnpm --filter @workspace/api-server run dev
 pnpm --filter @workspace/cookcircle run dev
 ```
 
-The web app proxies `/api/*` to the API server. Open the CookCircle preview from the workspace.
+The web app proxies `/api/*` to the API server during local dev.
+
+## Running on the college server (live demo)
+
+The app is already deployed and running on the college server. These steps cover logging in, checking it, restarting it, and opening it.
+
+### 1. Log in to the server
+
+```bash
+ssh nakashni@vmedu470.mtacloud.co.il
+```
+
+Enter the password (sent separately — it is **not** stored in this repo).
+
+### 2. Go to the project directory
+
+```bash
+cd ~/apps/cookcircle
+```
+
+### 3. Check the app is running
+
+```bash
+curl -s http://127.0.0.1:8080/api/healthz      # -> {"status":"ok"}
+curl -s http://127.0.0.1:8080/api/health        # adapter status: db / media / location
+```
+
+A `200` / `{"status":"ok"}` means the API is live.
+
+### 4. Restart the app
+
+The app currently runs as a single backgrounded Node process (no process manager).
+`node` is on the PATH in an interactive SSH session (loaded via nvm).
+
+```bash
+# stop the current server
+pkill -f 'api-server/dist/index.mjs'
+
+# start it again with env loaded from .env
+cd ~/apps/cookcircle/artifacts/api-server
+set -a; source ../../.env; set +a
+nohup node --enable-source-maps dist/index.mjs > ~/cookcircle-server.log 2>&1 &
+
+# confirm
+curl -s http://127.0.0.1:8080/api/healthz
+```
+
+> If you pulled new code, rebuild first so `_static` (and the demo images in `public/donation-images/`) are regenerated:
+> ```bash
+> cd ~/apps/cookcircle
+> pnpm install
+> pnpm --filter @workspace/cookcircle run build
+> pnpm --filter @workspace/api-server run build
+> ```
+
+### 5. Open the app in your browser
+
+**Option A — direct (simplest):** the server exposes port 8080 publicly, so just open:
+
+```
+http://vmedu470.mtacloud.co.il:8080
+```
+
+**Option B — SSH tunnel (if direct access is blocked):** in a **new** PowerShell/terminal window on your own machine:
+
+```bash
+ssh -L 18080:127.0.0.1:8080 nakashni@vmedu470.mtacloud.co.il
+```
+
+Leave that window open, then browse to:
+
+```
+http://127.0.0.1:18080
+```
+
+### Quick reference (תקציר — גישה לשרת)
+
+```bash
+# בשרת / on the server
+ssh nakashni@vmedu470.mtacloud.co.il
+cd ~/apps/cookcircle
+curl -s http://127.0.0.1:8080/api/healthz          # בדיקה שהאתר חי
+pkill -f 'api-server/dist/index.mjs'               # עצירה
+cd artifacts/api-server && set -a; source ../../.env; set +a
+nohup node --enable-source-maps dist/index.mjs > ~/cookcircle-server.log 2>&1 &   # הפעלה מחדש
+
+# בדפדפן / in the browser
+# ישירות:  http://vmedu470.mtacloud.co.il:8080
+```
+
+> **Note:** `pm2` is not installed on the server, so `pm2 restart all` / `pm2 status` will not work — use the `node` commands above. The process does not auto-restart on reboot; installing a process manager (pm2 / systemd) is a recommended future improvement.
 
 ## Database
 
@@ -44,13 +156,28 @@ Schema is defined in `lib/db/src/schema/cookcircle.ts` (users, donations, pickup
 ```bash
 # Apply / sync schema
 pnpm --filter @workspace/db run push
-
-# Reset & reseed (drops all data, then the API auto-seeds on next boot)
-psql "$DATABASE_URL" -c "truncate users, donations, pickup_requests, reviews restart identity cascade;"
-# Then restart the API workflow.
 ```
 
-The API runs an idempotent seed on first boot: 5 users, 7 donations, 4 requests, 1 review. The seed detects whether the canonical donation (`id=1`) is present with location data — if missing, it truncates and re-seeds to restore a consistent demo state. It never clobbers data unless the canonical donation is gone.
+The API runs an idempotent **canonical seed** on first boot (5 users, 7 donations, 4 requests, 1 review). It detects whether the canonical donation (`id=1`) is present with location data — if missing, it truncates and re-seeds to restore a consistent state. It never clobbers data unless the canonical donation is gone.
+
+## Demo data — Israeli food pack
+
+A separate, **idempotent** seed adds realistic Israeli demo donations on top of (not instead of) the canonical data, for presentations. Source: `lib/db/scripts/seed-demo-food.mjs`, reading `demo-assets/food-pack/.../metadata/cookcircle_demo_donations.json`.
+
+```bash
+cd ~/apps/cookcircle
+pnpm --filter @workspace/db run seed:demo-food
+# equivalent: node lib/db/scripts/seed-demo-food.mjs
+```
+
+What it does:
+
+- Inserts **31 donations** with natural Hebrew titles/descriptions, Hebrew food types, dietary tags, quantities, and **real Israeli pickup locations** (Tel Aviv, Jerusalem, Haifa, Be'er Sheva, …) with matching coordinates.
+- Creates **12 synthetic donor users** with Hebrew display names and safe `@example.com` emails (never real identities).
+- Sets `status = available` and generates **now-relative expiry** so the cards look live during a demo.
+- Serves each photo from `/donation-images/<file>` (files live in `artifacts/cookcircle/public/donation-images/`).
+- **Idempotent & safe:** each demo row is keyed on a hidden internal token stored in `place_id` (never returned by the API or shown in the UI). Re-running updates the live fields instead of duplicating, and existing/real data is never deleted or reset.
+- **No user-facing field contains** `demo`/`test`/`seed`/`sample`/`fake`/`placeholder`.
 
 ## Donations API
 
@@ -80,28 +207,31 @@ Invalid transitions return `409 Conflict`.
 
 ## Health & integrations
 
-`GET /api/health` returns `{ status, db, media, location }` — useful to confirm which adapters are live.
+- `GET /api/healthz` — liveness probe, returns `{ "status": "ok" }`.
+- `GET /api/health` — returns `{ status, db, media, location }` to confirm which adapters are live.
 
 | Adapter      | Active when…                                                       | Fallback behavior                                                                                  |
 | ------------ | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
 | **media**    | All three `CLOUDINARY_*` vars are set → `cloudinary`               | `local` — every donation gets a stable `imageUrl`; the web client renders a food-themed gradient + emoji placeholder when no real image is uploaded, so the feed never shows broken or random photos. |
 | **location** | `GOOGLE_MAPS_API_KEY` set → `google` | `local` — deterministic pseudo-coords derived from the address, so distance calculation and the embedded OpenStreetMap preview still work end-to-end. |
 
-### Current build status (this workspace)
+See `.env.example` for the full list of env vars. Real secrets live only in the server's `.env` (gitignored) — never in this repo.
 
-By default the workspace ships with **no third-party keys configured**, so both adapters report `local`. The product is fully usable in this state — uploaded images are stored as data URLs through the same `/api/donations` payload, distances are computed from the deterministic coords, and the OpenStreetMap iframe renders a real map regardless. Hit `GET /api/health` at any time to verify.
+## Recent changes & current status
 
-See `.env.example` for the full list of env vars.
+### Done
 
-## Project layout
+- ✅ Postgres-backed backend with full donation / request / review lifecycle, dietary tags, and privacy (area-only location for the public feed; exact address revealed to donor / approved requester).
+- ✅ Canonical boot seed (idempotent).
+- ✅ **Israeli demo food pack** — 31 Hebrew donations, 12 synthetic donors, real locations, real photos, live expiry, via the new idempotent `seed:demo-food` script (`lib/db/scripts/`).
+- ✅ Demo photos committed under `artifacts/cookcircle/public/donation-images/` and the source pack under `demo-assets/`.
+- ✅ Deployed and running on the college server (single-origin Express on port 8080), reachable directly at the live-demo URL above.
+- ✅ Local media/location fallback (`local` adapters) so the app is fully usable with no third-party keys.
 
-```
-artifacts/
-  api-server/        Express API (routes, media + location adapters, seed)
-  cookcircle/        React web app
-    src/lib/api.ts   Typed client for the API (single fetch entry point)
-  mockup-sandbox/    Component preview server
-lib/
-  db/                Drizzle schema, client, push/migrate scripts
-.env.example
-```
+### Not configured / known gaps
+
+- ⚠️ **Cloudinary** and **Google Maps** keys are not set on the server → both adapters run in `local` fallback (functional, but no real CDN/geocoding).
+- ⚠️ **No process manager** — the app runs as a plain backgrounded `node` process and does **not** auto-restart on server reboot. (pm2 / systemd recommended.)
+- ⚠️ `artifacts/mockup-sandbox` has a pre-existing TypeScript error (Vite version drift between `vite@5` and `vite@7` plugin types). It is the design-mockup package only and does **not** affect the running app; the app packages (`api-server`, `cookcircle`, `lib/*`) typecheck clean.
+- ⚠️ **No automated tests** are configured.
+- ⚠️ Some tracked files carry mixed CRLF/LF line endings; adding a `.gitattributes` (`* text=auto eol=lf`) would normalize this.
